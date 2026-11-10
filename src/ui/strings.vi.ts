@@ -63,4 +63,12 @@ export const STRINGS_VI = {
   exhibitsViewedProgress: (viewed: number, total: number) => `Đã xem ${viewed}/${total} hiện vật`,
   rotateHint3D: 'Kéo chuột để xoay 360° • Cuộn chuột để phóng to/thu nhỏ',
   viewedBadge: '✓ ĐÃ XEM',
+
+  // Chuỗi cho Lệnh 4: Hướng dẫn viên 3D (F3.1 - F3.4)
+  guideRole: 'Hướng dẫn viên',
+  btnSkipSpeech: 'Bỏ qua [S]',
+  btnMuteSpeech: 'Tắt tiếng [M]',
+  btnUnmuteSpeech: 'Bật tiếng [M]',
+  speechMutedNotice: 'Đã tắt tiếng (chỉ hiện phụ đề)',
+  speechUnmutedNotice: 'Đã bật tiếng',
 };

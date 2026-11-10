@@ -10,6 +10,9 @@ import { RoomManager } from './world/RoomManager';
 import { ProgressTracker } from './player/ProgressTracker';
 import { ProgressHUD } from './ui/ProgressHUD';
 import { ExhibitManager } from './world/ExhibitManager';
+import { SpeechService } from './guide/SpeechService';
+import { SubtitleHUD } from './ui/SubtitleHUD';
+import { Guide } from './guide/Guide';
 import { loadMuseum, MuseumValidationError } from './types';
 import { STRINGS_VI } from './ui/strings.vi';
 
@@ -93,7 +96,7 @@ async function bootstrap(): Promise<void> {
     const controller = new FirstPersonController(engine.camera, canvas, collisionSystem);
     controller.setPosition(0, 8.5, Math.PI);
 
-    // 7. Khởi tạo các thành phần giao diện & chuyển cảnh Lệnh 2 & 3
+    // 7. Khởi tạo các thành phần giao diện & chuyển cảnh
     const screenFader = new ScreenFader();
     const introOverlay = new RoomIntroOverlay();
 
@@ -102,7 +105,18 @@ async function bootstrap(): Promise<void> {
     const progressHUD = new ProgressHUD();
     const exhibitManager = new ExhibitManager(progressTracker, progressHUD, controller);
 
-    // 9. Khởi tạo bộ quản lý phòng (RoomManager)
+    // 9. Khởi tạo dịch vụ giọng nói, phụ đề và Hướng dẫn viên 3D Anh Minh (F3.1 - F3.4)
+    const speechService = new SpeechService();
+    const subtitleHUD = new SubtitleHUD(speechService, museumData.museum.guideName);
+    const guide = new Guide(
+      museumData.museum.guideName,
+      speechService,
+      subtitleHUD,
+      collisionSystem
+    );
+    engine.scene.add(guide.group);
+
+    // 10. Khởi tạo bộ quản lý phòng (RoomManager)
     const roomManager = new RoomManager(
       engine,
       museumData,
@@ -113,8 +127,9 @@ async function bootstrap(): Promise<void> {
       introOverlay,
       exhibitManager
     );
+    roomManager.setGuide(guide);
 
-    // 10. Bản đồ nhỏ ở góc phải trên (F1.5)
+    // 11. Bản đồ nhỏ ở góc phải trên (F1.5)
     const minimap = new Minimap(museumData.rooms, (targetRoomId) => {
       roomManager.navigateTo(targetRoomId);
     });
@@ -129,10 +144,12 @@ async function bootstrap(): Promise<void> {
     // Bắt đầu chạy vòng lặp dựng hình Three.js
     engine.start();
 
-    // 11. Tạo màn hình mở đầu (Welcome & Hướng dẫn điều khiển)
+    // 12. Tạo màn hình mở đầu (Welcome & Hướng dẫn điều khiển)
     const welcomeOverlay = new WelcomeOverlay(museumData, () => {
       controller.setEnabled(true);
       canvas.focus();
+      // Khi bắt đầu vào sảnh: Hướng dẫn viên vẫy chào và nói lời chào mừng (F3.4)
+      guide.greetLobby(museumData.museum.welcome);
     });
 
     // Hỗ trợ tham số URL thử nghiệm hoặc liên kết trực tiếp (?autostart=1&room=...)
@@ -164,6 +181,9 @@ async function bootstrap(): Promise<void> {
             }, 600);
           }
         }
+      } else {
+        // Tự động chào ở sảnh nếu không chỉ định phòng
+        guide.greetLobby(museumData.museum.welcome);
       }
     }
 

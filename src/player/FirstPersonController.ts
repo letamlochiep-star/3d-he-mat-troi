@@ -439,4 +439,8 @@ export class FirstPersonController {
   public getPosition(): THREE.Vector3 {
     return this.camera.position;
   }
+
+  public getYaw(): number {
+    return this.yaw;
+  }
 }

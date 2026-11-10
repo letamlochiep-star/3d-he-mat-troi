@@ -121,6 +121,14 @@ export class ExhibitManager {
     this.progressTracker.markAsViewed(exhibitData.id);
   }
 
+  public getClosestExhibit(): Exhibit | null {
+    return this.closestExhibit;
+  }
+
+  public getClosestExhibitPosition(): THREE.Vector3 | null {
+    return this.closestExhibit ? this.closestExhibit.centerPosition : null;
+  }
+
   private updateProgressHUD(): void {
     if (this.currentRoomExhibitsData.length === 0) {
       this.progressHUD.setVisible(false);

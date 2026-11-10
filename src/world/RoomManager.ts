@@ -9,6 +9,7 @@ import { ScreenFader } from '../ui/ScreenFader';
 import { RoomIntroOverlay } from '../ui/RoomIntroOverlay';
 import { Minimap } from '../ui/Minimap';
 import { ExhibitManager } from './ExhibitManager';
+import { Guide } from '../guide/Guide';
 
 /**
  * Bộ quản lý chuyển cảnh giữa Sảnh chính và các phòng (F1.1, F1.2, F1.5, F2.1)
@@ -23,6 +24,7 @@ export class RoomManager {
   private readonly introOverlay: RoomIntroOverlay;
   private readonly exhibitManager: ExhibitManager;
   private minimap: Minimap | null = null;
+  private guide: Guide | null = null;
 
   private currentRoomId = 'lobby';
   private currentRoomInstance: RoomInstance | null = null;
@@ -56,6 +58,10 @@ export class RoomManager {
     this.minimap = minimap;
   }
 
+  public setGuide(guide: Guide): void {
+    this.guide = guide;
+  }
+
   public getCurrentRoomId(): string {
     return this.currentRoomId;
   }
@@ -69,6 +75,16 @@ export class RoomManager {
     // 1. Cập nhật xoay hiện vật và nhãn tương tác < 3m (F2.3)
     if (this.currentRoomInstance) {
       this.exhibitManager.update(delta, playerPos);
+    }
+
+    // 2. Cập nhật Hướng dẫn viên 3D đi theo và animation (F3.3)
+    if (this.guide) {
+      this.guide.update(
+        delta,
+        playerPos,
+        this.controller.getYaw(),
+        this.exhibitManager.getClosestExhibitPosition()
+      );
     }
 
     if (this.isTransitioning) return;
@@ -112,6 +128,8 @@ export class RoomManager {
 
     await this.screenFader.fadeTransition(() => {
       // 1. Tháo dỡ cảnh hiện tại
+      this.guide?.stopSpeaking();
+
       if (this.currentRoomId === 'lobby') {
         this.engine.scene.remove(this.lobby.group);
       } else if (this.currentRoomInstance) {
@@ -132,11 +150,19 @@ export class RoomManager {
       const entranceZ = roomData.size.depth / 2 - 2.2;
       this.controller.setPosition(0, entranceZ, Math.PI);
 
+      // Đặt hướng dẫn viên đứng bên cạnh khách tại lối vào
+      this.guide?.teleportTo(1.6, entranceZ, Math.PI);
+
       this.currentRoomId = roomId;
 
       // 4. Cập nhật minimap & hiển thị bảng giới thiệu 6 giây (F2.1)
       this.minimap?.setCurrentRoom(roomId);
       this.introOverlay.show(roomData);
+
+      // 5. Hướng dẫn viên nói lời dẫn phòng lần đầu (F3.4)
+      if (this.guide) {
+        this.guide.introduceRoom(roomId, roomData.guideIntro, roomData.style?.ambientAudio);
+      }
     });
 
     this.isTransitioning = false;
@@ -151,6 +177,7 @@ export class RoomManager {
 
     await this.screenFader.fadeTransition(() => {
       // 1. Giải phóng hiện vật và phòng cũ
+      this.guide?.stopSpeaking();
       this.exhibitManager.clearExhibits();
 
       if (this.currentRoomInstance) {
@@ -165,6 +192,7 @@ export class RoomManager {
 
       // 3. Đặt người chơi ở lối vào sảnh (nhìn hướng về bảng tên phía Bắc)
       this.controller.setPosition(0, 8.5, Math.PI);
+      this.guide?.teleportTo(1.8, 8.5, Math.PI);
       this.currentRoomId = 'lobby';
 
       // 4. Cập nhật Minimap & ẩn bảng giới thiệu
