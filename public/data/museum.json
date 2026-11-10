@@ -1,0 +1,139 @@
+{
+  "museum": {
+    "name": "Bảo tàng Lịch sử & Văn hóa Việt Nam",
+    "welcome": "Chào mừng bạn đến với Bảo tàng Lịch sử & Văn hóa Việt Nam. Chúc bạn có một hành trình khám phá di sản thật ý nghĩa!",
+    "guideName": "Anh Minh"
+  },
+  "rooms": [
+    {
+      "id": "phong-1",
+      "name": "Văn hóa Đông Sơn & Thời kỳ Dựng nước",
+      "theme": "Kỷ nguyên văn hóa Đông Sơn rực rỡ",
+      "intro": "Nơi trưng bày những bảo vật tiêu biểu thời kỳ Đông Sơn với nghệ thuật đúc đồng đỉnh cao của người Việt cổ.",
+      "guideIntro": "Chào bạn, đây là phòng trưng bày Văn hóa Đông Sơn. Mời bạn cùng chiêm ngưỡng những bảo vật ngàn năm tuổi.",
+      "size": {
+        "width": 24,
+        "depth": 18,
+        "height": 6
+      },
+      "style": {
+        "wall": "#e8e2d6",
+        "floor": "wood",
+        "lighting": "warm",
+        "ambientAudio": "audio/dong-son.mp3"
+      },
+      "exhibits": [
+        {
+          "id": "hv-101",
+          "type": "image",
+          "title": "Trống đồng Ngọc Lũ",
+          "period": "Thế kỷ II - III trước Công nguyên",
+          "origin": "Hà Nam, Việt Nam",
+          "summary": "Tuyệt tác nghệ thuật đúc đồng đỉnh cao thời kỳ Đông Sơn.",
+          "description": "Trống đồng Ngọc Lũ là hiện vật tiêu biểu nhất của nền văn hóa Đông Sơn, thể hiện đỉnh cao nghệ thuật đúc đồng và tư duy thẩm mỹ cổ xưa của người Việt.",
+          "story": "Cách đây hơn hai nghìn năm, người Việt cổ đã đúc nên những chiếc trống đồng vừa là nhạc khí thiêng liêng, vừa là biểu tượng quyền lực của thủ lĩnh.",
+          "source": "Bảo tàng Lịch sử Quốc gia",
+          "asset": "images/hv-101.jpg",
+          "audio": null,
+          "position": {
+            "wall": "north",
+            "offset": -6
+          },
+          "tourOrder": 1
+        },
+        {
+          "id": "hv-102",
+          "type": "image",
+          "title": "Thạp đồng Đào Thịnh",
+          "period": "Khoảng 2.500 năm trước",
+          "origin": "Yên Bái, Việt Nam",
+          "summary": "Thạp đồng Đông Sơn lớn nhất từng được phát hiện.",
+          "description": "Thạp đồng Đào Thịnh có kích thước đồ sộ với hoa văn khắc họa sinh động cảnh săn bắt, chèo thuyền và biểu tượng phồn thực của cư dân nông nghiệp lúa nước.",
+          "story": "Thạp đồng được tìm thấy bên bờ sông Hồng, chứa đựng những dấu tích về đời sống tâm linh và khát vọng sinh sôi phồn vinh của tổ tiên.",
+          "source": "Bảo tàng Lịch sử Quốc gia",
+          "asset": "images/hv-102.jpg",
+          "audio": null,
+          "position": {
+            "wall": "north",
+            "offset": 6
+          },
+          "tourOrder": 2
+        }
+      ],
+      "quiz": [
+        {
+          "question": "Trống đồng Ngọc Lũ thuộc nền văn hóa cổ nào của Việt Nam?",
+          "options": [
+            "Văn hóa Sa Huỳnh",
+            "Văn hóa Đông Sơn",
+            "Văn hóa Óc Eo",
+            "Văn hóa Đồng Đậu"
+          ],
+          "answer": 1,
+          "explain": "Trống đồng Ngọc Lũ là bảo vật tiêu biểu đỉnh cao của nền văn hóa Đông Sơn."
+        }
+      ],
+      "suggestedQuestions": [
+        "Trống đồng Ngọc Lũ có niên đại vào thời kỳ nào?",
+        "Ý nghĩa hoa văn trên trống đồng là gì?",
+        "Tại sao trống đồng lại quan trọng với người Việt cổ?"
+      ]
+    },
+    {
+      "id": "phong-2",
+      "name": "Mỹ thuật & Tinh hoa Gốm Việt",
+      "theme": "Nghệ thuật tạo hình và đồ gốm truyền thống",
+      "intro": "Khám phá các dòng gốm hoa nâu, gốm men ngọc và gốm Chu Đậu nổi tiếng qua các triều đại Lý, Trần, Lê.",
+      "guideIntro": "Chào mừng bạn đến với phòng gốm truyền thống, nơi lưu giữ tinh hoa bàn tay tài hoa của các nghệ nhân đất Việt.",
+      "size": {
+        "width": 20,
+        "depth": 16,
+        "height": 5
+      },
+      "style": {
+        "wall": "#f0ebe1",
+        "floor": "stone",
+        "lighting": "warm",
+        "ambientAudio": "audio/gom-viet.mp3"
+      },
+      "exhibits": [
+        {
+          "id": "hv-201",
+          "type": "model",
+          "title": "Bình gốm hoa lam Chu Đậu",
+          "period": "Thế kỷ XV",
+          "origin": "Hải Dương, Việt Nam",
+          "summary": "Dòng gốm xuất khẩu trứ danh thời Lê sơ.",
+          "description": "Gốm Chu Đậu nổi tiếng với nước men tro trấu tự nhiên và họa tiết hoa lam tinh xảo thể hiện nét đẹp tâm hồn làng quê Việt.",
+          "story": "Gốm Chu Đậu từng thất truyền nhiều thế kỷ trước khi được tái phát hiện từ một chiếc bình cổ được đấu giá tại Istanbul, Thổ Nhĩ Kỳ.",
+          "source": "Bảo tàng Lịch sử Quốc gia",
+          "asset": "models/binh-chu-dau.glb",
+          "audio": null,
+          "position": {
+            "x": 0,
+            "z": -4
+          },
+          "tourOrder": 1
+        }
+      ],
+      "quiz": [
+        {
+          "question": "Dòng gốm Chu Đậu nổi tiếng với nguyên liệu men độc đáo nào?",
+          "options": [
+            "Men tro trấu",
+            "Men đá vôi",
+            "Men hóa học",
+            "Men chì"
+          ],
+          "answer": 0,
+          "explain": "Men tro trấu là bí quyết độc đáo tạo nên độ sáng bóng và bền màu đặc trưng của gốm Chu Đậu."
+        }
+      ],
+      "suggestedQuestions": [
+        "Gốm Chu Đậu có nguồn gốc từ đâu?",
+        "Đặc điểm nổi bật của gốm hoa lam là gì?",
+        "Hiện vật gốm Chu Đậu được tìm thấy ở đâu trên thế giới?"
+      ]
+    }
+  ]
+}

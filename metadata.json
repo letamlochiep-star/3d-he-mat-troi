@@ -1,0 +1,7 @@
+{
+  "name": "Remix Remix 3D Museum Explorer",
+  "description": "Bảo tàng không gian 3D hiện đại tương tác với ánh sáng chân thực, quả địa cầu xoay và điều khiển WASD.",
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

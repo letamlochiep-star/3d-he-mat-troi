@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>html,body{margin:0}</style>
+<title>Bảo tàng Không gian 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Saira+Condensed:wght@500;600;700&display=swap">
+<style>
+/* Bố cục: khung 3D phủ kín màn hình; giao diện là các bảng kính mỏng neo ở bốn góc, giống nhãn hiện vật trong phòng trưng bày tối. */
+:root {
+  color-scheme: dark;
+  --ink: #0a0d13;
+  --panel: rgba(13, 17, 25, .84);
+  --panel-solid: #111620;
+  --line: rgba(255, 255, 255, .13);
+  --fg: #eef0f3;
+  --muted: #a3acbb;
+  --brass: #e6b96e;
+  --brass-ink: #1b1408;
+  --display: "Saira Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --body: "Be Vietnam Pro", "Segoe UI", Roboto, Arial, sans-serif;
+  --gl: max(16px, env(safe-area-inset-left, 0px));
+  --gr: max(16px, env(safe-area-inset-right, 0px));
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  background: var(--ink); color: var(--fg);
+  font-family: var(--body); font-size: 15px; line-height: 1.5;
+  overflow: hidden; position: relative;
+}
+#stage { position: absolute; inset: 0; overflow: hidden; }
+#view { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; outline: none; }
+#view.dragging { cursor: grabbing; }
+
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, #view:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+/* Thanh trên */
+.top {
+  position: absolute; top: 0; left: 0; right: 0;
+  padding: 14px var(--gr) 0 var(--gl);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  pointer-events: none;
+}
+.brand { min-width: 0; text-shadow: 0 1px 12px rgba(0,0,0,.8); }
+.brand .eyebrow { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--brass); }
+.brand h1 { margin: 0; font-family: var(--display); font-weight: 700; font-size: clamp(22px, 3.4vw, 34px); line-height: 1.05; letter-spacing: .02em; text-transform: uppercase; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; pointer-events: auto; }
+.btn {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  padding: 8px 14px; font-weight: 500; font-size: 14px; backdrop-filter: blur(8px);
+}
+.btn:hover { border-color: var(--brass); color: var(--brass); }
+.btn[aria-expanded="true"] { background: var(--brass); color: var(--brass-ink); border-color: var(--brass); }
+
+/* Danh mục hiện vật */
+#list {
+  position: absolute; top: 62px; right: var(--gr); width: min(300px, calc(100% - var(--gl) - var(--gr)));
+  max-height: calc(100% - 90px); overflow-y: auto;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 4px; backdrop-filter: blur(10px);
+  padding: 6px;
+}
+#list h2 { margin: 8px 10px 6px; font-size: 11px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+#list ol { list-style: none; margin: 0; padding: 0; }
+#list button {
+  width: 100%; text-align: left; background: none; border: 0; border-radius: 3px;
+  padding: 8px 10px; display: flex; align-items: baseline; gap: 10px;
+}
+#list button:hover, #list button.here { background: rgba(230, 185, 110, .14); }
+#list .n { font-family: var(--display); font-size: 18px; font-weight: 600; flex: 1; min-width: 0; }
+#list .k { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+/* Nhãn hiện vật */
+#card {
+  position: absolute; left: var(--gl); bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  width: min(380px, calc(100% - var(--gl) - var(--gr)));
+  background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--brass);
+  backdrop-filter: blur(10px); padding: 16px 18px 16px;
+  transition: opacity .25s, transform .25s;
+}
+#card.off { opacity: 0; transform: translateY(8px); pointer-events: none; }
+#card .kicker { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--brass); }
+#card h2 { margin: 2px 0 8px; font-family: var(--display); font-weight: 700; font-size: 34px; line-height: 1; text-transform: uppercase; letter-spacing: .02em; }
+#card p { margin: 0 0 12px; color: var(--fg); text-wrap: pretty; }
+#card dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 5px 14px; border-top: 1px solid var(--line); padding-top: 10px; font-size: 13.5px; }
+#card dt { color: var(--muted); }
+#card dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
+
+/* Gợi ý điều khiển */
+#hint {
+  position: absolute; right: var(--gr); bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  font-size: 12.5px; color: var(--muted); text-align: right; text-shadow: 0 1px 8px rgba(0,0,0,.9);
+  pointer-events: none;
+}
+kbd {
+  font-family: var(--display); font-size: 13px; font-weight: 600; color: var(--fg);
+  border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px;
+  padding: 0 5px; background: var(--panel-solid);
+}
+
+/* Cần điều khiển cảm ứng */
+#stick {
+  position: absolute; left: calc(var(--gl) + 6px); bottom: calc(26px + env(safe-area-inset-bottom, 0px));
+  width: 112px; height: 112px; border-radius: 50%;
+  border: 1px solid var(--line); background: rgba(13, 17, 25, .5); touch-action: none; display: none;
+}
+#stick i { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: var(--brass); opacity: .9; }
+@media (pointer: coarse) {
+  #stick { display: block; }
+  #hint { display: none; }
+  #card { bottom: auto; top: 76px; padding: 12px 14px; }
+  #card h2 { font-size: 26px; }
+  #card p { font-size: 13.5px; margin-bottom: 8px; }
+}
+
+@media (max-width: 560px) {
+  .btn { padding: 6px 10px; font-size: 13px; }
+  #btnFull { display: none; }
+  #list { top: 56px; }
+}
+
+/* Màn hình mở đầu */
+#intro {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  padding: 24px var(--gr) 24px var(--gl);
+  background: radial-gradient(ellipse at 50% 40%, rgba(10,13,19,.35), rgba(10,13,19,.9));
+  overflow-y: auto;
+}
+.sheet { width: min(520px, 100%); background: var(--panel); border: 1px solid var(--line); border-top: 2px solid var(--brass); backdrop-filter: blur(12px); padding: 26px 26px 24px; }
+.sheet .eyebrow { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--brass); }
+.sheet h2 { margin: 4px 0 10px; font-family: var(--display); font-weight: 700; font-size: clamp(34px, 7vw, 52px); line-height: .98; text-transform: uppercase; text-wrap: balance; }
+.sheet p { margin: 0 0 16px; color: var(--fg); }
+.keys { list-style: none; margin: 0 0 20px; padding: 14px 0 0; border-top: 1px solid var(--line); display: grid; gap: 8px; font-size: 14px; color: var(--muted); }
+.keys b { color: var(--fg); font-weight: 500; }
+.go { background: var(--brass); color: var(--brass-ink); border: 0; border-radius: 4px; padding: 12px 22px; font-weight: 600; font-size: 16px; }
+.go:hover { filter: brightness(1.08); }
+.note { margin: 14px 0 0 !important; font-size: 12.5px; color: var(--muted) !important; }
+#err { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; background: var(--ink); }
+@media (prefers-reduced-motion: reduce) { #card { transition: none; } }
+</style>
+
+</head>
+<body>
+<div id="stage">
+  <canvas id="view" tabindex="0" aria-label="Phòng trưng bày 3D. Dùng phím W A S D hoặc phím mũi tên để di chuyển, kéo chuột để nhìn quanh."></canvas>
+
+  <div class="top">
+    <div class="brand">
+      <div class="eyebrow">Tham quan ảo</div>
+      <h1>Bảo tàng Không gian 3D</h1>
+    </div>
+    <div class="actions">
+      <button class="btn" id="btnList" aria-expanded="false" aria-controls="list">Hiện vật</button>
+      <button class="btn" id="btnHelp">Hướng dẫn</button>
+      <button class="btn" id="btnFull">Toàn màn hình</button>
+    </div>
+  </div>
+
+  <nav id="list" hidden aria-label="Danh mục hiện vật">
+    <h2>Đi tới hiện vật</h2>
+    <ol id="listItems"></ol>
+  </nav>
+
+  <aside id="card" class="off" aria-live="polite">
+    <div class="kicker" id="cKicker"></div>
+    <h2 id="cName"></h2>
+    <p id="cText"></p>
+    <dl id="cStats"></dl>
+  </aside>
+
+  <div id="hint"><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> di chuyển · kéo chuột để nhìn · <kbd>Shift</kbd> đi nhanh</div>
+  <div id="stick" aria-hidden="true"><i></i></div>
+
+  <div id="intro">
+    <div class="sheet">
+      <div class="eyebrow">Phòng trưng bày Hệ Mặt Trời</div>
+      <h2>Bảo tàng Không gian 3D</h2>
+      <p>Quả địa cầu xoay ở giữa sảnh, chín hiện vật xếp quanh tường theo thứ tự từ Mặt Trời ra ngoài. Lại gần một hiện vật để đọc nhãn thông tin.</p>
+      <ul class="keys">
+        <li><b>Máy tính:</b> <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> hoặc phím mũi tên để đi, kéo chuột để nhìn quanh, giữ <kbd>Shift</kbd> để đi nhanh.</li>
+        <li><b>Điện thoại:</b> cần điều khiển ở góc trái để đi, vuốt màn hình để nhìn quanh.</li>
+        <li><b>Đi nhanh:</b> bấm vào hiện vật, hoặc chọn trong nút “Hiện vật”.</li>
+      </ul>
+      <button class="go" id="btnGo">Bắt đầu tham quan</button>
+      <p class="note">Kích thước mô hình không theo tỉ lệ thật. Số liệu trên nhãn là giá trị trung bình đã làm tròn.</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var stage = $('stage'), canvas = $('view');
+
+  function fail(msg) {
+    var d = document.createElement('div'); d.id = 'err';
+    d.innerHTML = '<p>' + msg + '</p>'; stage.appendChild(d);
+  }
+  if (!window.THREE) { fail('Không tải được thư viện đồ hoạ 3D. Hãy kiểm tra kết nối mạng rồi tải lại trang.'); return; }
+
+  /* ---------- Dữ liệu hiện vật ---------- */
+  var EXHIBITS = [
+    { id: 'earth', name: 'Trái Đất', kicker: 'Hành tinh thứ ba · Trung tâm sảnh', r: 2.2, tilt: 23.4, spin: 0.12,
+      text: 'Hành tinh duy nhất đã biết có sự sống. Trục quay nghiêng tạo ra bốn mùa; đại dương phủ phần lớn bề mặt.',
+      stats: [['Đường kính', '12.742 km'], ['Trục nghiêng', '23,4°'], ['Bề mặt là nước', '≈ 71%'], ['Một năm', '365,25 ngày']] },
+    { id: 'sun', name: 'Mặt Trời', kicker: 'Ngôi sao trung tâm', r: 1.15, tilt: 7, spin: 0.05,
+      text: 'Quả cầu khí nóng sáng chiếm gần như toàn bộ khối lượng của Hệ Mặt Trời, giữ các hành tinh trên quỹ đạo.',
+      stats: [['Đường kính', '≈ 1,39 triệu km'], ['Nhiệt độ bề mặt', '≈ 5.500 °C'], ['Khối lượng cả hệ', '≈ 99,86%']] },
+    { id: 'mercury', name: 'Sao Thủy', kicker: 'Hành tinh thứ nhất', r: 0.5, tilt: 0, spin: 0.08,
+      text: 'Hành tinh nhỏ nhất và gần Mặt Trời nhất. Bề mặt đá đầy hố va chạm, gần như không có khí quyển.',
+      stats: [['Đường kính', '4.879 km'], ['Một năm', '88 ngày'], ['Vệ tinh', 'Không có']] },
+    { id: 'venus', name: 'Sao Kim', kicker: 'Hành tinh thứ hai', r: 0.72, tilt: 3, spin: -0.05,
+      text: 'Khí quyển CO₂ dày đặc giữ nhiệt khiến đây là hành tinh nóng nhất. Sao Kim tự quay ngược chiều và rất chậm.',
+      stats: [['Đường kính', '12.104 km'], ['Nhiệt độ bề mặt', '≈ 465 °C'], ['Một ngày', '243 ngày Trái Đất'], ['Một năm', '225 ngày']] },
+    { id: 'moon', name: 'Mặt Trăng', kicker: 'Vệ tinh của Trái Đất', r: 0.55, tilt: 6.7, spin: 0.06,
+      text: 'Vệ tinh tự nhiên duy nhất của Trái Đất. Lực hấp dẫn của nó là nguyên nhân chính gây ra thủy triều.',
+      stats: [['Đường kính', '3.474 km'], ['Cách Trái Đất', '≈ 384.400 km'], ['Chu kì quay quanh', '27,3 ngày']] },
+    { id: 'mars', name: 'Sao Hỏa', kicker: 'Hành tinh thứ tư', r: 0.62, tilt: 25.2, spin: 0.11,
+      text: 'Hành tinh Đỏ, màu do bụi oxit sắt. Có núi lửa Olympus Mons cao khoảng 22 km và hai chỏm băng ở cực.',
+      stats: [['Đường kính', '6.779 km'], ['Một năm', '687 ngày'], ['Vệ tinh', 'Phobos, Deimos']] },
+    { id: 'jupiter', name: 'Sao Mộc', kicker: 'Hành tinh thứ năm', r: 1.1, tilt: 3.1, spin: 0.28,
+      text: 'Hành tinh khí khổng lồ, lớn nhất Hệ Mặt Trời. Vết Đỏ Lớn là một cơn bão đã được quan sát hàng trăm năm.',
+      stats: [['Đường kính', '139.820 km'], ['Một ngày', '≈ 9,9 giờ'], ['Một năm', '≈ 11,9 năm']] },
+    { id: 'saturn', name: 'Sao Thổ', kicker: 'Hành tinh thứ sáu', r: 0.9, tilt: 26.7, spin: 0.26, ring: true,
+      text: 'Nổi bật với hệ vành đai gồm vô số mảnh băng và đá. Khối lượng riêng trung bình nhỏ hơn nước.',
+      stats: [['Đường kính', '116.460 km'], ['Một ngày', '≈ 10,7 giờ'], ['Một năm', '≈ 29,4 năm']] },
+    { id: 'uranus', name: 'Sao Thiên Vương', kicker: 'Hành tinh thứ bảy', r: 0.78, tilt: 97.8, spin: 0.16,
+      text: 'Hành tinh băng khổng lồ có trục quay nghiêng gần 98°, nên nó gần như “nằm lăn” trên quỹ đạo.',
+      stats: [['Đường kính', '50.724 km'], ['Trục nghiêng', '≈ 98°'], ['Một năm', '≈ 84 năm']] },
+    { id: 'neptune', name: 'Sao Hải Vương', kicker: 'Hành tinh thứ tám', r: 0.76, tilt: 28.3, spin: 0.17,
+      text: 'Hành tinh xa Mặt Trời nhất, màu xanh thẫm do khí mê-tan. Gió ở đây thuộc loại mạnh nhất Hệ Mặt Trời.',
+      stats: [['Đường kính', '49.244 km'], ['Tốc độ gió', 'tới ≈ 2.000 km/h'], ['Một năm', '≈ 165 năm']] }
+  ];
+
+  /* Vị trí quanh tường: [x, z] điểm trên tường và pháp tuyến hướng vào phòng */
+  var HX = 20, HZ = 14, H = 9;
+  var SLOTS = [
+    null,
+    { w: [-11, HZ], n: [0, -1] },   // Mặt Trời – tường trước, trái
+    { w: [-HX, 5], n: [1, 0] },     // Sao Thủy
+    { w: [-HX, -5], n: [1, 0] },    // Sao Kim
+    { w: [-12, -HZ], n: [0, 1] },   // Mặt Trăng
+    { w: [0, -HZ], n: [0, 1] },     // Sao Hỏa
+    { w: [12, -HZ], n: [0, 1] },    // Sao Mộc
+    { w: [HX, -5], n: [-1, 0] },    // Sao Thổ
+    { w: [HX, 5], n: [-1, 0] },     // Sao Thiên Vương
+    { w: [11, HZ], n: [0, -1] }     // Sao Hải Vương
+  ];
+
+  /* ---------- Nhiễu thủ tục để vẽ bề mặt ---------- */
+  function hash(x, y, z, s) {
+    var h = (x * 374761393 + y * 668265263 + z * 2147483647 + s * 144665) | 0;
+    h = (h ^ (h >>> 13)) * 1274126177 | 0;
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  }
+  function sm(t) { return t * t * (3 - 2 * t); }
+  function vnoise(x, y, z, s) {
+    var xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z);
+    var u = sm(x - xi), v = sm(y - yi), w = sm(z - zi);
+    function L(a, b, t) { return a + (b - a) * t; }
+    return L(
+      L(L(hash(xi, yi, zi, s), hash(xi + 1, yi, zi, s), u), L(hash(xi, yi + 1, zi, s), hash(xi + 1, yi + 1, zi, s), u), v),
+      L(L(hash(xi, yi, zi + 1, s), hash(xi + 1, yi, zi + 1, s), u), L(hash(xi, yi + 1, zi + 1, s), hash(xi + 1, yi + 1, zi + 1, s), u), v), w);
+  }
+  function fbm(x, y, z, oct, s) {
+    var a = 0.5, f = 1, sum = 0, norm = 0;
+    for (var i = 0; i < oct; i++) { sum += a * vnoise(x * f, y * f, z * f, s + i); norm += a; a *= 0.5; f *= 2.03; }
+    return sum / norm;
+  }
+  function mix(a, b, t) { t = t < 0 ? 0 : t > 1 ? 1 : t; return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+  function step(e0, e1, x) { var t = (x - e0) / (e1 - e0); return t < 0 ? 0 : t > 1 ? 1 : sm(t); }
+
+  function sphereTex(w, h, fn, srgb) {
+    var c = document.createElement('canvas'); c.width = w; c.height = h;
+    var g = c.getContext('2d'), img = g.createImageData(w, h), d = img.data, i = 0;
+    for (var y = 0; y < h; y++) {
+      var phi = (y + 0.5) / h * Math.PI, sp = Math.sin(phi), ny = Math.cos(phi);
+      for (var x = 0; x < w; x++) {
+        var th = (x + 0.5) / w * Math.PI * 2;
+        var col = fn(sp * Math.cos(th), ny, sp * Math.sin(th));
+        d[i++] = col[0]; d[i++] = col[1]; d[i++] = col[2]; d[i++] = col.length > 3 ? col[3] : 255;
+      }
+    }
+    g.putImageData(img, 0, 0);
+    var t = new THREE.CanvasTexture(c);
+    if (srgb !== false) t.encoding = THREE.sRGBEncoding;
+    t.anisotropy = 4;
+    return t;
+  }
+
+  var SURF = {
+    earth: function (x, y, z) {
+      var n = fbm(x * 1.7 + 3, y * 1.7, z * 1.7, 6, 11);
+      var lat = Math.abs(y);
+      var ice = lat + (fbm(x * 5, y * 5, z * 5, 3, 40) - 0.5) * 0.12;
+      if (ice > 0.9) return [236, 242, 246];
+      if (n > 0.535) {
+        var e = (n - 0.535) / 0.25, dry = fbm(x * 3, y * 3, z * 3, 3, 77);
+        var c = mix([52, 104, 52], [150, 136, 84], step(0.35, 0.65, dry) * (1 - lat * 0.6) + e * 0.4);
+        c = mix(c, [112, 96, 80], step(0.45, 0.9, e));
+        return mix(c, [230, 236, 240], step(0.72, 0.9, ice));
+      }
+      return mix([8, 30, 78], [28, 92, 150], step(0.36, 0.535, n));
+    },
+    sun: function (x, y, z) {
+      var n = fbm(x * 5, y * 5, z * 5, 5, 5), m = fbm(x * 14, y * 14, z * 14, 3, 9);
+      return mix([214, 84, 10], [255, 226, 130], n * 0.75 + m * 0.4);
+    },
+    mercury: function (x, y, z) {
+      var n = fbm(x * 4, y * 4, z * 4, 5, 21), c = fbm(x * 16, y * 16, z * 16, 2, 22);
+      return mix([78, 74, 72], [176, 168, 160], n * 0.8 + (c > 0.62 ? -0.25 : 0.1));
+    },
+    venus: function (x, y, z) {
+      var n = fbm(x * 1.2 + fbm(x * 3, y * 3, z * 3, 3, 31) * 1.2, y * 4, z * 1.2, 5, 32);
+      return mix([196, 150, 82], [244, 224, 176], n);
+    },
+    moon: function (x, y, z) {
+      var n = fbm(x * 2.2, y * 2.2, z * 2.2, 5, 41), c = fbm(x * 18, y * 18, z * 18, 2, 42);
+      var v = step(0.38, 0.6, n) * 0.7 + 0.25 + (c > 0.64 ? 0.12 : 0) - (c < 0.34 ? 0.1 : 0);
+      return mix([62, 62, 66], [214, 212, 206], v);
+    },
+    mars: function (x, y, z) {
+      var n = fbm(x * 2.4, y * 2.4, z * 2.4, 6, 51);
+      if (Math.abs(y) + (fbm(x * 6, y * 6, z * 6, 2, 52) - 0.5) * 0.1 > 0.93) return [240, 232, 224];
+      return mix([104, 44, 24], [214, 126, 76], step(0.3, 0.72, n));
+    },
+    jupiter: function (x, y, z) {
+      var wob = (fbm(x * 3, y * 3, z * 3, 4, 61) - 0.5) * 0.16;
+      var b = Math.sin((y + wob) * 15) * 0.5 + 0.5, f = fbm(x * 8, y * 22, z * 8, 3, 62);
+      var c = mix([150, 96, 62], [234, 214, 180], b * 0.8 + f * 0.25);
+      var dx = x - 0.72, dy = (y + 0.36) * 2.1, dz = z - 0.6, spot = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      return mix([178, 64, 40], c, step(0.13, 0.26, spot));
+    },
+    saturn: function (x, y, z) {
+      var wob = (fbm(x * 2, y * 2, z * 2, 3, 71) - 0.5) * 0.08;
+      var b = Math.sin((y + wob) * 20) * 0.5 + 0.5;
+      return mix([186, 156, 104], [240, 222, 176], b * 0.7 + fbm(x * 4, y * 18, z * 4, 2, 72) * 0.3);
+    },
+    uranus: function (x, y, z) {
+      var b = Math.sin(y * 9) * 0.5 + 0.5;
+      return mix([132, 204, 210], [178, 232, 232], b * 0.5 + fbm(x * 2, y * 6, z * 2, 2, 81) * 0.5);
+    },
+    neptune: function (x, y, z) {
+      var wob = (fbm(x * 3, y * 3, z * 3, 3, 91) - 0.5) * 0.2;
+      var b = Math.sin((y + wob) * 8) * 0.5 + 0.5;
+      var c = mix([30, 62, 170], [76, 128, 226], b * 0.6 + fbm(x * 4, y * 10, z * 4, 3, 92) * 0.4);
+      return fbm(x * 5 + 2, y * 12, z * 5, 3, 93) > 0.72 ? mix(c, [220, 232, 250], 0.6) : c;
+    }
+  };
+
+  /* ---------- Khung cảnh ---------- */
+  var renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance' });
+  } catch (e) { fail('Trình duyệt này chưa bật WebGL nên không hiển thị được không gian 3D.'); return; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x07090d);
+  scene.fog = new THREE.Fog(0x07090d, 26, 60);
+  var camera = new THREE.PerspectiveCamera(62, 1, 0.1, 120);
+  camera.rotation.order = 'YXZ';
+
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var spinners = [], pickables = [], obstacles = [];
+
+  function gridTex(base, line, cells) {
+    var c = document.createElement('canvas'); c.width = c.height = 512;
+    var g = c.getContext('2d'); g.fillStyle = base; g.fillRect(0, 0, 512, 512);
+    for (var i = 0; i < 4000; i++) { g.fillStyle = 'rgba(255,255,255,' + (Math.random() * 0.035) + ')'; g.fillRect(Math.random() * 512, Math.random() * 512, 2, 2); }
+    g.strokeStyle = line; g.lineWidth = 3; g.strokeRect(0, 0, 512, 512);
+    var t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(cells[0], cells[1]);
+    t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; return t;
+  }
+
+  function buildRoom() {
+    var floor = new THREE.Mesh(new THREE.PlaneGeometry(HX * 2, HZ * 2),
+      new THREE.MeshStandardMaterial({ map: gridTex('#2a2e36', 'rgba(0,0,0,.55)', [10, 7]), roughness: 0.32, metalness: 0.15 }));
+    floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+
+    var ceil = new THREE.Mesh(new THREE.PlaneGeometry(HX * 2, HZ * 2), new THREE.MeshStandardMaterial({ color: 0x14171d, roughness: 1 }));
+    ceil.rotation.x = Math.PI / 2; ceil.position.y = H; scene.add(ceil);
+
+    var wallMat = new THREE.MeshStandardMaterial({ color: 0x3a4250, roughness: 0.92 });
+    var glow = new THREE.MeshBasicMaterial({ color: 0xffc27a });
+    [[0, -HZ, 0, HX * 2], [0, HZ, Math.PI, HX * 2], [-HX, 0, Math.PI / 2, HZ * 2], [HX, 0, -Math.PI / 2, HZ * 2]].forEach(function (w) {
+      var m = new THREE.Mesh(new THREE.PlaneGeometry(w[3], H), wallMat);
+      m.position.set(w[0], H / 2, w[1]); m.rotation.y = w[2]; m.receiveShadow = true; scene.add(m);
+      var strip = new THREE.Mesh(new THREE.PlaneGeometry(w[3], 0.07), glow);
+      strip.position.set(w[0], 0.12, w[1]); strip.rotation.y = w[2]; strip.translateZ(0.03); scene.add(strip);
+      var cove = strip.clone(); cove.position.y = H - 0.5; scene.add(cove);
+    });
+
+    // Vòm sao và vòng đèn phía trên quả địa cầu
+    var disc = new THREE.Mesh(new THREE.CircleGeometry(7, 64), new THREE.MeshBasicMaterial({ color: 0x010206 }));
+    disc.rotation.x = Math.PI / 2; disc.position.y = H - 0.02; scene.add(disc);
+    var pts = [], N = 700;
+    for (var i = 0; i < N; i++) { var a = Math.random() * 6.283, r = Math.sqrt(Math.random()) * 6.8; pts.push(Math.cos(a) * r, H - 0.05, Math.sin(a) * r); }
+    var sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    scene.add(new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xdfe8ff, size: 0.07, sizeAttenuation: true })));
+    var ring = new THREE.Mesh(new THREE.TorusGeometry(7.05, 0.07, 8, 96), glow);
+    ring.rotation.x = Math.PI / 2; ring.position.y = H - 0.1; scene.add(ring);
+
+    var fr = new THREE.Mesh(new THREE.RingGeometry(3.3, 3.42, 96), new THREE.MeshBasicMaterial({ color: 0xffc27a }));
+    fr.rotation.x = -Math.PI / 2; fr.position.y = 0.012; scene.add(fr);
+
+    scene.add(new THREE.HemisphereLight(0x9fb4d8, 0x2a2622, 0.5));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.1));
+  }
+
+  function plaque(ex, idx) {
+    var c = document.createElement('canvas'); c.width = 1024; c.height = 400;
+    var g = c.getContext('2d');
+    g.fillStyle = '#10141c'; g.fillRect(0, 0, 1024, 400);
+    g.fillStyle = '#e6b96e'; g.fillRect(0, 0, 1024, 8);
+    g.textBaseline = 'alphabetic';
+    g.font = '500 34px "Be Vietnam Pro", "Segoe UI", Arial, sans-serif'; g.fillStyle = '#e6b96e';
+    g.fillText(ex.kicker.toUpperCase(), 56, 110);
+    var size = 150; g.fillStyle = '#eef0f3';
+    do { g.font = '700 ' + size + 'px "Saira Condensed", "Arial Narrow", Arial, sans-serif'; size -= 6; } while (g.measureText(ex.name.toUpperCase()).width > 910 && size > 60);
+    g.fillText(ex.name.toUpperCase(), 52, 270);
+    g.font = '400 36px "Be Vietnam Pro", "Segoe UI", Arial, sans-serif'; g.fillStyle = '#a3acbb';
+    g.fillText(ex.stats[0][0] + ': ' + ex.stats[0][1], 56, 345);
+    var t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8;
+    return new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.64), new THREE.MeshBasicMaterial({ map: t }));
+  }
+
+  var pedMat = new THREE.MeshStandardMaterial({ color: 0x1c2028, roughness: 0.45, metalness: 0.3 });
+  var brassMat = new THREE.MeshStandardMaterial({ color: 0xc89a52, roughness: 0.35, metalness: 0.8 });
+
+  function buildExhibit(ex, idx) {
+    var big = idx === 0, res = big ? [1024, 512] : [384, 192];
+    var slot = SLOTS[idx], px = 0, pz = 0, nx = 0, nz = 1;
+    if (slot) { nx = slot.n[0]; nz = slot.n[1]; px = slot.w[0] + nx * 2.6; pz = slot.w[1] + nz * 2.6; }
+    var pedH = big ? 0.9 : 1.15, pedR = big ? 1.3 : Math.max(0.5, ex.r * 0.55);
+    var cy = pedH + ex.r + (big ? 0.7 : 0.45) + (ex.ring ? 0.25 : 0);
+
+    var ped = new THREE.Mesh(new THREE.CylinderGeometry(pedR, pedR * 1.08, pedH, 48), pedMat);
+    ped.position.set(px, pedH / 2, pz); ped.castShadow = big; ped.receiveShadow = true; scene.add(ped);
+    var cap = new THREE.Mesh(new THREE.CylinderGeometry(pedR * 1.02, pedR * 1.02, 0.05, 48), brassMat);
+    cap.position.set(px, pedH + 0.025, pz); scene.add(cap);
+    var stem = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.05, cy - pedH - ex.r * 0.5, 12), brassMat);
+    stem.position.set(px, pedH + (cy - pedH - ex.r * 0.5) / 2, pz); scene.add(stem);
+
+    var tex = sphereTex(res[0], res[1], SURF[ex.id]);
+    var mat = ex.id === 'sun'
+      ? new THREE.MeshBasicMaterial({ map: tex })
+      : new THREE.MeshStandardMaterial({ map: tex, roughness: ex.id === 'earth' ? 0.62 : 0.85, metalness: 0 });
+    var tiltG = new THREE.Group(); tiltG.position.set(px, cy, pz); tiltG.rotation.z = -ex.tilt * Math.PI / 180;
+    // xoay nhóm để trục nghiêng luôn thấy rõ từ phía người xem
+    tiltG.rotation.y = Math.atan2(nx, nz) - Math.PI / 2 + Math.PI / 2;
+    var ball = new THREE.Mesh(new THREE.SphereGeometry(ex.r, big ? 96 : 48, big ? 64 : 32), mat);
+    ball.castShadow = big; ball.userData.idx = idx; tiltG.add(ball); scene.add(tiltG);
+    spinners.push({ m: ball, s: ex.spin });
+    pickables.push(ball);
+
+    if (big) {
+      var clouds = new THREE.Mesh(new THREE.SphereGeometry(ex.r * 1.012, 64, 48), new THREE.MeshStandardMaterial({
+        map: sphereTex(512, 256, function (x, y, z) {
+          var n = fbm(x * 2.6 + 9, y * 4.2, z * 2.6, 5, 123);
+          return [255, 255, 255, Math.round(step(0.5, 0.72, n) * 225)];
+        }), transparent: true, depthWrite: false, roughness: 1 }));
+      tiltG.add(clouds); spinners.push({ m: clouds, s: ex.spin * 1.35 });
+      var atmo = new THREE.Mesh(new THREE.SphereGeometry(ex.r * 1.09, 64, 48), new THREE.ShaderMaterial({
+        vertexShader: 'varying vec3 vN; varying vec3 vV; void main(){ vec4 mv = modelViewMatrix*vec4(position,1.0); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix*mv; }',
+        fragmentShader: 'varying vec3 vN; varying vec3 vV; void main(){ float f = pow(1.0 - abs(dot(vN, vV)), 2.2); gl_FragColor = vec4(0.35, 0.62, 1.0, 1.0) * f * 0.9; }',
+        side: THREE.BackSide, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }));
+      tiltG.add(atmo);
+      // trục quay bằng đồng
+      var axis = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, ex.r * 2.5, 10), brassMat); tiltG.add(axis);
+    }
+    if (ex.id === 'sun') {
+      var halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex(), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+      halo.scale.set(ex.r * 5.2, ex.r * 5.2, 1); halo.position.set(px, cy, pz); scene.add(halo);
+      var pl = new THREE.PointLight(0xffb765, 1.1, 13, 2); pl.position.set(px, cy, pz); scene.add(pl);
+    }
+    if (ex.ring) {
+      var ri = ex.r * 1.3, ro = ex.r * 2.25, rg = new THREE.RingGeometry(ri, ro, 128, 1);
+      var pos = rg.attributes.position, uv = rg.attributes.uv, v = new THREE.Vector3();
+      for (var i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i); uv.setXY(i, (v.length() - ri) / (ro - ri), 0.5); }
+      var rc = document.createElement('canvas'); rc.width = 256; rc.height = 4; var g = rc.getContext('2d');
+      for (var x = 0; x < 256; x++) {
+        var t = x / 255, a = (0.35 + 0.55 * vnoise(t * 22, 0, 0, 7)) * (t > 0.58 && t < 0.66 ? 0.06 : 1) * step(0, 0.05, t) * (1 - step(0.94, 1, t));
+        var s = 190 + 50 * vnoise(t * 40, 1, 0, 8);
+        g.fillStyle = 'rgba(' + Math.round(s) + ',' + Math.round(s * 0.9) + ',' + Math.round(s * 0.72) + ',' + a.toFixed(3) + ')'; g.fillRect(x, 0, 1, 4);
+      }
+      var rt = new THREE.CanvasTexture(rc); rt.encoding = THREE.sRGBEncoding;
+      var ringM = new THREE.Mesh(rg, new THREE.MeshStandardMaterial({ map: rt, transparent: true, side: THREE.DoubleSide, roughness: 0.9, depthWrite: false }));
+      ringM.rotation.x = Math.PI / 2; tiltG.add(ringM);
+    }
+
+    // Đèn rọi
+    var sp = new THREE.SpotLight(big ? 0xfff1dc : 0xffe9cc, big ? 2.3 : 1.5, big ? 22 : 15, big ? 0.48 : 0.36, 0.7, 1.2);
+    sp.position.set(px + nx * (big ? 3.5 : 2.2), H - 0.4, pz + nz * (big ? 3.5 : 2.2));
+    sp.target.position.set(px, cy * 0.8, pz); scene.add(sp); scene.add(sp.target);
+    if (big) {
+      sp.castShadow = true; sp.shadow.mapSize.set(1024, 1024); sp.shadow.bias = -0.0005; sp.shadow.radius = 4;
+      var sp2 = new THREE.SpotLight(0x8fb4ff, 0.9, 22, 0.5, 0.8, 1.2);
+      sp2.position.set(-5, H - 0.4, -6); sp2.target.position.set(0, cy, 0); scene.add(sp2); scene.add(sp2.target);
+    }
+
+    if (slot) {
+      var p = plaque(ex, idx);
+      p.position.set(slot.w[0] + nx * 0.05, 6.3, slot.w[1] + nz * 0.05); p.rotation.y = Math.atan2(nx, nz); scene.add(p);
+    }
+
+    ex.pos = new THREE.Vector3(px, cy, pz);
+    ex.view = big ? new THREE.Vector3(0, 1.7, 9) : new THREE.Vector3(px + nx * 4.6, 1.7, pz + nz * 4.6);
+    ex.range = big ? 7.5 : 5.2;
+    obstacles.push({ x: px, z: pz, r: pedR + 0.55 });
+  }
+
+  function haloTex() {
+    var c = document.createElement('canvas'); c.width = c.height = 256; var g = c.getContext('2d');
+    var gr = g.createRadialGradient(128, 128, 30, 128, 128, 128);
+    gr.addColorStop(0, 'rgba(255,190,90,.75)'); gr.addColorStop(0.35, 'rgba(255,140,40,.28)'); gr.addColorStop(1, 'rgba(255,120,20,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+    return new THREE.CanvasTexture(c);
+  }
+
+  /* ---------- Điều khiển ---------- */
+  var pos = new THREE.Vector3(0, 1.7, 11.5), yaw = 0, pitch = 0.06;
+  var keys = {}, joy = { x: 0, y: 0 }, glide = null, started = false;
+
+  var MOVE = { KeyW: 'f', ArrowUp: 'f', KeyS: 'b', ArrowDown: 'b', KeyA: 'l', KeyD: 'r', ArrowLeft: 'tl', ArrowRight: 'tr', ShiftLeft: 'run', ShiftRight: 'run' };
+  window.addEventListener('keydown', function (e) {
+    var k = MOVE[e.code]; if (!k) return;
+    if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    if (e.target && e.target.tagName === 'BUTTON' && k !== 'run' && !/^Key/.test(e.code)) return;
+    keys[k] = true; if (k !== 'run') { glide = null; if (/^Arrow/.test(e.code)) e.preventDefault(); }
+  });
+  window.addEventListener('keyup', function (e) { var k = MOVE[e.code]; if (k) keys[k] = false; });
+  window.addEventListener('blur', function () { keys = {}; });
+
+  var drag = null;
+  canvas.addEventListener('pointerdown', function (e) {
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: 0 };
+    try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+    canvas.classList.add('dragging'); canvas.focus({ preventScroll: true });
+  });
+  canvas.addEventListener('pointermove', function (e) {
+    if (!drag || drag.id !== e.pointerId) return;
+    var dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
+    drag.moved += Math.abs(dx) + Math.abs(dy);
+    if (drag.moved > 4) glide = null;
+    var k = e.pointerType === 'touch' ? 0.0055 : 0.0034;
+    yaw += dx * k; pitch = Math.max(-1.2, Math.min(1.2, pitch + dy * k));
+  });
+  function endDrag(e) {
+    if (!drag || drag.id !== e.pointerId) return;
+    var wasClick = drag.moved < 5; drag = null; canvas.classList.remove('dragging');
+    if (wasClick && e.type === 'pointerup') pick(e);
+  }
+  canvas.addEventListener('pointerup', endDrag); canvas.addEventListener('pointercancel', endDrag);
+
+  var ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  function pick(e) {
+    var r = canvas.getBoundingClientRect();
+    ndc.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    var hit = ray.intersectObjects(pickables, false)[0];
+    if (hit) goTo(hit.object.userData.idx);
+  }
+
+  var stick = $('stick'), knob = stick.firstElementChild, sid = null;
+  function stickMove(e) {
+    var r = stick.getBoundingClientRect(), x = (e.clientX - r.left - r.width / 2) / (r.width / 2), y = (e.clientY - r.top - r.height / 2) / (r.height / 2);
+    var l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; }
+    joy.x = x; joy.y = y; knob.style.transform = 'translate(' + (x * 33) + 'px,' + (y * 33) + 'px)'; glide = null;
+  }
+  stick.addEventListener('pointerdown', function (e) { sid = e.pointerId; try { stick.setPointerCapture(sid); } catch (_) {} stickMove(e); e.preventDefault(); });
+  stick.addEventListener('pointermove', function (e) { if (e.pointerId === sid) stickMove(e); });
+  function stickEnd(e) { if (e.pointerId !== sid) return; sid = null; joy.x = joy.y = 0; knob.style.transform = ''; }
+  stick.addEventListener('pointerup', stickEnd); stick.addEventListener('pointercancel', stickEnd);
+
+  function goTo(idx) {
+    var ex = EXHIBITS[idx], v = ex.view;
+    var ty = Math.atan2(ex.pos.x - v.x, -(ex.pos.z - v.z));
+    var tp = -Math.atan2(ex.pos.y - 1.7, Math.hypot(ex.pos.x - v.x, ex.pos.z - v.z));
+    var dy = ty - yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+    if (reduce) { pos.copy(v); yaw = ty; pitch = tp; return; }
+    glide = { p0: pos.clone(), p1: v.clone(), y0: yaw, y1: yaw + dy, t0: pitch, t1: tp, t: 0, d: Math.max(0.9, Math.min(2.6, pos.distanceTo(v) / 9)) };
+  }
+
+  function update(dt) {
+    if (glide) {
+      glide.t = Math.min(1, glide.t + dt / glide.d);
+      var e = glide.t < 0.5 ? 2 * glide.t * glide.t : 1 - Math.pow(-2 * glide.t + 2, 2) / 2;
+      pos.lerpVectors(glide.p0, glide.p1, e); yaw = glide.y0 + (glide.y1 - glide.y0) * e; pitch = glide.t0 + (glide.t1 - glide.t0) * e;
+      if (glide.t >= 1) glide = null;
+    } else if (started) {
+      var f = (keys.f ? 1 : 0) - (keys.b ? 1 : 0) - joy.y, s = (keys.r ? 1 : 0) - (keys.l ? 1 : 0) + joy.x;
+      yaw += ((keys.tr ? 1 : 0) - (keys.tl ? 1 : 0)) * 1.6 * dt;
+      var l = Math.hypot(f, s);
+      if (l > 0.01) {
+        if (l > 1) { f /= l; s /= l; }
+        var sp = (keys.run ? 10 : 5.5) * dt, sy = Math.sin(yaw), cy = Math.cos(yaw);
+        pos.x += (sy * f + cy * s) * sp; pos.z += (-cy * f + sy * s) * sp;
+        for (var i = 0; i < obstacles.length; i++) {
+          var o = obstacles[i], dx = pos.x - o.x, dz = pos.z - o.z, d = Math.hypot(dx, dz);
+          if (d < o.r && d > 0.0001) { pos.x = o.x + dx / d * o.r; pos.z = o.z + dz / d * o.r; }
+        }
+        pos.x = Math.max(-HX + 0.8, Math.min(HX - 0.8, pos.x)); pos.z = Math.max(-HZ + 0.8, Math.min(HZ - 0.8, pos.z));
+      }
+    }
+    camera.position.copy(pos); camera.rotation.y = -yaw; camera.rotation.x = -pitch;
+    var k = reduce ? 0.35 : 1;
+    for (var j = 0; j < spinners.length; j++) spinners[j].m.rotation.y += spinners[j].s * dt * k;
+  }
+
+  /* ---------- Nhãn thông tin ---------- */
+  var card = $('card'), shown = -1, listBtns = [];
+  function nearest() {
+    var best = -1, bd = 1e9;
+    for (var i = 0; i < EXHIBITS.length; i++) {
+      var ex = EXHIBITS[i], d = Math.hypot(pos.x - ex.pos.x, pos.z - ex.pos.z);
+      if (d < ex.range && d / ex.range < bd) { bd = d / ex.range; best = i; }
+    }
+    return best;
+  }
+  function showCard(i) {
+    if (i === shown) return; shown = i;
+    listBtns.forEach(function (b, k) { b.classList.toggle('here', k === i); });
+    if (i < 0 || !started) { card.classList.add('off'); return; }
+    var ex = EXHIBITS[i];
+    $('cKicker').textContent = ex.kicker; $('cName').textContent = ex.name; $('cText').textContent = ex.text;
+    var dl = $('cStats'); dl.textContent = '';
+    ex.stats.forEach(function (s) {
+      var dt = document.createElement('dt'), dd = document.createElement('dd');
+      dt.textContent = s[0]; dd.textContent = s[1]; dl.appendChild(dt); dl.appendChild(dd);
+    });
+    card.classList.remove('off');
+  }
+
+  /* ---------- Giao diện ---------- */
+  var list = $('list'), btnList = $('btnList'), intro = $('intro');
+  function toggleList(open) { list.hidden = !open; btnList.setAttribute('aria-expanded', String(open)); }
+  btnList.addEventListener('click', function () { toggleList(list.hidden); });
+  $('btnHelp').addEventListener('click', function () { intro.hidden = false; toggleList(false); $('btnGo').textContent = 'Tiếp tục tham quan'; $('btnGo').focus(); });
+  $('btnGo').addEventListener('click', function () {
+    intro.hidden = true; started = true; shown = -2; canvas.focus({ preventScroll: true });
+  });
+  var btnFull = $('btnFull');
+  if (!stage.requestFullscreen) btnFull.hidden = true;
+  btnFull.addEventListener('click', function () {
+    if (document.fullscreenElement) { document.exitFullscreen(); return; }
+    var p = stage.requestFullscreen(); if (p && p.catch) p.catch(function () { btnFull.hidden = true; });
+  });
+  document.addEventListener('fullscreenchange', function () { btnFull.textContent = document.fullscreenElement ? 'Thoát toàn màn hình' : 'Toàn màn hình'; });
+
+  function buildList() {
+    var ol = $('listItems');
+    EXHIBITS.forEach(function (ex, i) {
+      var li = document.createElement('li'), b = document.createElement('button');
+      b.innerHTML = '<span class="n"></span><span class="k"></span>';
+      b.firstChild.textContent = ex.name; b.lastChild.textContent = ex.stats[0][1];
+      b.addEventListener('click', function () { if (!started) { intro.hidden = true; started = true; } goTo(i); if (window.innerWidth < 720) toggleList(false); });
+      li.appendChild(b); ol.appendChild(li); listBtns.push(b);
+    });
+  }
+
+  /* ---------- Vòng lặp ---------- */
+  function resize() {
+    var w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < h ? 78 : 62; camera.updateProjectionMatrix();
+  }
+  var last = 0;
+  function frame(t) {
+    requestAnimationFrame(frame);
+    if (document.hidden) { last = t; return; }
+    var dt = Math.min(0.05, (t - last) / 1000 || 0); last = t;
+    update(dt); showCard(started ? nearest() : -1);
+    renderer.render(scene, camera);
+  }
+
+  function start() {
+    buildRoom();
+    EXHIBITS.forEach(buildExhibit);
+    buildList();
+    resize();
+    if (window.ResizeObserver) new ResizeObserver(resize).observe(stage); else window.addEventListener('resize', resize);
+    requestAnimationFrame(frame);
+  }
+  var fontsReady = (document.fonts && document.fonts.load)
+    ? Promise.all([document.fonts.load('700 100px "Saira Condensed"', 'SAO THỔ'), document.fonts.load('500 34px "Be Vietnam Pro"', 'Hành tinh')]).catch(function () {})
+    : Promise.resolve();
+  Promise.race([fontsReady, new Promise(function (r) { setTimeout(r, 1500); })]).then(start);
+})();
+</script>
+</body>
+</html>
