@@ -41,6 +41,52 @@ function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
   return { allowed: true, remaining: MAX_QUESTIONS_PER_HOUR - record.count };
 }
 
+// Đọc danh sách khóa API từ biến môi trường hoặc tệp .env.local
+let currentKeyIndex = 0;
+function getAvailableApiKeys(): string[] {
+  // Ưu tiên đọc biến môi trường
+  let rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || '';
+
+  // Đọc trực tiếp từ .env.local nếu biến môi trường chưa kịp nạp
+  if (!rawKeys || rawKeys.includes('PLACEHOLDER') || rawKeys.includes('your_gemini_api_key_here')) {
+    try {
+      const envPath = path.resolve(process.cwd(), '.env.local');
+      if (fs.existsSync(envPath)) {
+        const content = fs.readFileSync(envPath, 'utf-8');
+        const matchKeys = content.match(/GEMINI_API_KEYS\s*=\s*([^\r\n]+)/);
+        const matchSingle = content.match(/GEMINI_API_KEY\s*=\s*([^\r\n]+)/);
+        if (matchKeys) {
+          rawKeys = matchKeys[1];
+        } else if (matchSingle) {
+          rawKeys = matchSingle[1];
+        }
+      }
+    } catch {
+      // bỏ qua lỗi đọc file
+    }
+  }
+
+  const list = rawKeys
+    .split(/[\r\n,;]+/)
+    .map(k => k.trim())
+    .filter(k => k && !k.startsWith('#') && k !== 'your_gemini_api_key_here' && k !== 'PLACEHOLDER_API_KEY');
+
+  // Loại bỏ các khóa trùng lặp
+  return Array.from(new Set(list));
+}
+
+function getModelName(): string {
+  try {
+    const envPath = path.resolve(process.cwd(), '.env.local');
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, 'utf-8');
+      const match = content.match(/GEMINI_MODEL\s*=\s*([^\r\n]+)/);
+      if (match && match[1].trim()) return match[1].trim();
+    }
+  } catch {}
+  return process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+}
+
 // Đọc dữ liệu bảo tàng để nạp context cho Gemini
 let cachedMuseumData: any = null;
 function getMuseumData(): any {
@@ -180,9 +226,9 @@ export async function handleChatRequest(req: IncomingMessage, res: ServerRespons
   // Giới hạn 6 lượt hội thoại gần nhất (F4.2)
   const recentHistory = (body.history || []).slice(-6);
 
-  // Đọc cấu hình Gemini từ biến môi trường
-  const apiKey = process.env.GEMINI_API_KEY || '';
-  const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+  // Đọc danh sách khóa API và tên mô hình
+  const apiKeys = getAvailableApiKeys();
+  const modelName = getModelName();
 
   // Thiết lập SSE response
   res.statusCode = 200;
@@ -191,14 +237,13 @@ export async function handleChatRequest(req: IncomingMessage, res: ServerRespons
   res.setHeader('Connection', 'keep-alive');
 
   // Nếu không có khóa API, trả về phản hồi lịch sự từ dữ liệu sẵn có (F4.6)
-  if (!apiKey || apiKey === 'your_gemini_api_key_here') {
+  if (apiKeys.length === 0) {
     let mockAnswer = 'Chào bạn! Mình là Anh Minh. Khóa API Gemini chưa được thiết lập trên máy chủ nên mình đang trò chuyện ở chế độ offline. ';
     if (museum?.guide?.introduction) {
       mockAnswer += museum.guide.introduction + ' ';
     }
     mockAnswer += 'Bạn hãy nhấn vào các bảng hiện vật trong phòng để đọc thuyết minh chi tiết nhé!';
 
-    // Stream giả lập từng từ
     const words = mockAnswer.split(' ');
     for (let i = 0; i < words.length; i++) {
       const part = (i === 0 ? '' : ' ') + words[i];
@@ -212,16 +257,12 @@ export async function handleChatRequest(req: IncomingMessage, res: ServerRespons
 
   // Chuẩn bị nội dung gửi Gemini
   const contents: any[] = [];
-  
-  // Nạp 6 lượt lịch sử
   for (const item of recentHistory) {
     contents.push({
       role: item.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: item.content }],
     });
   }
-
-  // Thêm câu hỏi hiện tại
   contents.push({
     role: 'user',
     parts: [{ text: message }],
@@ -234,75 +275,92 @@ export async function handleChatRequest(req: IncomingMessage, res: ServerRespons
     contents,
     generationConfig: {
       temperature: 0.6,
-      maxOutputTokens: 250,
+      maxOutputTokens: 800,
+      thinkingConfig: {
+        thinkingBudget: 0,
+      },
     },
   };
 
-  try {
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:streamGenerateContent?alt=sse&key=${apiKey}`;
-    const response = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+  // Cơ chế luân chuyển khóa thông minh (Key Rotation Pool)
+  let successful = false;
+  const startIndex = currentKeyIndex % apiKeys.length;
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('Lỗi phản hồi từ Gemini API:', response.status, errText);
-      const fallbackMsg = 'Hiện tại kết nối với máy chủ AI tạm thời gián đoạn. Bạn có thể nhấn vào các thiên thể trong phòng để nghe thuyết minh chi tiết nhé!';
-      res.write(`data: ${JSON.stringify({ text: fallbackMsg, done: true, error: true })}\n\n`);
-      res.end();
-      return;
-    }
+  for (let attempt = 0; attempt < apiKeys.length; attempt++) {
+    const keyIdx = (startIndex + attempt) % apiKeys.length;
+    const apiKey = apiKeys[keyIdx];
 
-    if (!response.body) {
-      throw new Error('Không nhận được body phản hồi');
-    }
+    try {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:streamGenerateContent?alt=sse&key=${apiKey}`;
+      const response = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-    // Đọc stream từ Gemini SSE
-    const reader = (response.body as any).getReader ? (response.body as any).getReader() : null;
+      if (!response.ok) {
+        const errText = await response.text();
+        console.warn(`Khóa Gemini [${keyIdx + 1}/${apiKeys.length}] trả về mã lỗi ${response.status}. Đang chuyển sang khóa tiếp theo...`);
+        // Nếu là lỗi rate limit hoặc auth, thử key tiếp theo
+        continue;
+      }
 
-    if (reader) {
-      const decoder = new TextDecoder('utf-8');
-      let buffer = '';
+      if (!response.body) {
+        continue;
+      }
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
+      // Đọc stream từ Gemini SSE
+      const reader = (response.body as any).getReader ? (response.body as any).getReader() : null;
 
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
+      if (reader) {
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
 
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (trimmed.startsWith('data: ')) {
-            const dataContent = trimmed.substring(6).trim();
-            if (dataContent === '[DONE]') continue;
-            try {
-              const parsed = JSON.parse(dataContent);
-              const chunkText = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (chunkText) {
-                res.write(`data: ${JSON.stringify({ text: chunkText, done: false })}\n\n`);
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('data: ')) {
+              const dataContent = trimmed.substring(6).trim();
+              if (dataContent === '[DONE]') continue;
+              try {
+                const parsed = JSON.parse(dataContent);
+                const chunkText = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (chunkText) {
+                  res.write(`data: ${JSON.stringify({ text: chunkText, done: false })}\n\n`);
+                }
+              } catch {
+                // Bỏ qua dòng JSON chưa trọn vẹn
               }
-            } catch {
-              // Bỏ qua dòng json không hoàn chỉnh
             }
           }
         }
+      } else {
+        const fullText = await response.text();
+        res.write(`data: ${JSON.stringify({ text: fullText, done: false })}\n\n`);
       }
-    } else {
-      // Fallback khi stream API trả về text
-      const fullText = await response.text();
-      res.write(`data: ${JSON.stringify({ text: fullText, done: false })}\n\n`);
-    }
 
+      // Lưu lại key index hoạt động tốt
+      currentKeyIndex = keyIdx;
+      successful = true;
+      break;
+    } catch (keyErr) {
+      console.warn(`Lỗi khi gọi API với khóa [${keyIdx + 1}/${apiKeys.length}]:`, keyErr);
+    }
+  }
+
+  if (successful) {
     res.write(`data: ${JSON.stringify({ text: '', done: true })}\n\n`);
     res.end();
-  } catch (error: any) {
-    console.error('Lỗi khi gọi Gemini API:', error);
-    const errorMsg = 'Có lỗi xảy ra khi kết nối tới hướng dẫn viên ảo. Bạn hãy thử lại sau giây lát hoặc khám phá bảng thông tin hiện vật nhé!';
-    res.write(`data: ${JSON.stringify({ text: errorMsg, done: true, error: true })}\n\n`);
+  } else {
+    const fallbackMsg = 'Hiện tại các đường truyền đến máy chủ AI đều đang quá tải hoặc gián đoạn. Bạn có thể nhấn vào các thiên thể trong phòng để nghe thuyết minh chi tiết nhé!';
+    res.write(`data: ${JSON.stringify({ text: fallbackMsg, done: true, error: true })}\n\n`);
     res.end();
   }
 }
