@@ -50,8 +50,10 @@ export interface ExhibitData {
   description: string;
   story: string;
   source: string;
-  asset: string;
+  asset?: string | null;
   audio?: string | null;
+  stats?: Array<{ label: string; value: string }>;
+  procedural?: Record<string, unknown>;
   position: ExhibitPosition;
   tourOrder: number;
 }
@@ -220,7 +222,16 @@ export function validateMuseumData(data: unknown): asserts data is MuseumData {
       checkExStr(exhibit.description, 'description', 'Thuyết minh');
       checkExStr(exhibit.story, 'story', 'Câu chuyện kể');
       checkExStr(exhibit.source, 'source', 'Nguồn tư liệu');
-      checkExStr(exhibit.asset, 'asset', 'Đường dẫn tệp tài nguyên');
+      if (
+        exhibit.asset !== null &&
+        exhibit.asset !== undefined &&
+        typeof exhibit.asset !== 'string'
+      ) {
+        throw new MuseumValidationError(
+          `Phòng [${roomId}], hiện vật [${exId}]: Trường 'asset' phải là đường dẫn chuỗi hoặc null.`,
+          `rooms[${roomIdx}].exhibits[${exIdx}].asset`
+        );
+      }
 
       if (!exhibit.position || typeof exhibit.position !== 'object') {
         throw new MuseumValidationError(
