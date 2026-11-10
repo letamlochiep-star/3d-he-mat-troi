@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RoomData, FloorMaterial, LightingStyle } from '../types';
 import { CollisionSystem } from '../player/CollisionSystem';
 import { Door } from './Door';
+import { Exhibit } from './Exhibit';
 import { STRINGS_VI } from '../ui/strings.vi';
 
 /**
@@ -11,6 +12,7 @@ export class RoomInstance {
   public readonly group: THREE.Group;
   public readonly data: RoomData;
   public readonly returnDoor: Door;
+  public readonly exhibits: Exhibit[] = [];
   private readonly collisionSystem: CollisionSystem;
   private readonly disposables: Array<{ dispose: () => void }> = [];
 
@@ -41,6 +43,9 @@ export class RoomInstance {
    * Giải phóng triệt để tài nguyên GPU/WebGL khi khách rời phòng
    */
   public dispose(): void {
+    this.exhibits.forEach((e) => e.dispose());
+    this.exhibits.length = 0;
+
     this.group.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         if (child.geometry) {
@@ -309,7 +314,16 @@ export class RoomBuilder {
     // 4. ÁNH SÁNG THEO PHONG CÁCH
     this.setupLighting(instance, data.style.lighting, width, depth, height);
 
-    // 5. CẬP NHẬT RÀNG BUỘC VA CHẠM (F1.4)
+    // 5. DỰNG CÁC HIỆN VẬT TRONG PHÒNG (F2.2)
+    if (Array.isArray(data.exhibits)) {
+      data.exhibits.forEach((exData) => {
+        const exhibit = new Exhibit(exData, collisionSystem);
+        instance.exhibits.push(exhibit);
+        instance.group.appendChild(exhibit.group);
+      });
+    }
+
+    // 6. CẬP NHẬT RÀNG BUỘC VA CHẠM (F1.4)
     collisionSystem.setBounds({
       minX: -halfW + 0.3,
       maxX: halfW - 0.3,

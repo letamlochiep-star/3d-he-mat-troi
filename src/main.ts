@@ -7,6 +7,9 @@ import { ScreenFader } from './ui/ScreenFader';
 import { RoomIntroOverlay } from './ui/RoomIntroOverlay';
 import { Minimap } from './ui/Minimap';
 import { RoomManager } from './world/RoomManager';
+import { ProgressTracker } from './player/ProgressTracker';
+import { ProgressHUD } from './ui/ProgressHUD';
+import { ExhibitManager } from './world/ExhibitManager';
 import { loadMuseum, MuseumValidationError } from './types';
 import { STRINGS_VI } from './ui/strings.vi';
 
@@ -90,11 +93,16 @@ async function bootstrap(): Promise<void> {
     const controller = new FirstPersonController(engine.camera, canvas, collisionSystem);
     controller.setPosition(0, 8.5, Math.PI);
 
-    // 7. Khởi tạo các thành phần giao diện & chuyển cảnh Lệnh 2
+    // 7. Khởi tạo các thành phần giao diện & chuyển cảnh Lệnh 2 & 3
     const screenFader = new ScreenFader();
     const introOverlay = new RoomIntroOverlay();
 
-    // 8. Khởi tạo bộ quản lý phòng (RoomManager) kết nối Sảnh và các phòng (F1.1, F1.2)
+    // 8. Khởi tạo hệ thống theo dõi tiến độ và quản lý hiện vật (F2.2 - F2.5)
+    const progressTracker = new ProgressTracker();
+    const progressHUD = new ProgressHUD();
+    const exhibitManager = new ExhibitManager(progressTracker, progressHUD, controller);
+
+    // 9. Khởi tạo bộ quản lý phòng (RoomManager)
     const roomManager = new RoomManager(
       engine,
       museumData,
@@ -102,10 +110,11 @@ async function bootstrap(): Promise<void> {
       collisionSystem,
       controller,
       screenFader,
-      introOverlay
+      introOverlay,
+      exhibitManager
     );
 
-    // 9. Bản đồ nhỏ ở góc phải trên (F1.5)
+    // 10. Bản đồ nhỏ ở góc phải trên (F1.5)
     const minimap = new Minimap(museumData.rooms, (targetRoomId) => {
       roomManager.navigateTo(targetRoomId);
     });
@@ -120,7 +129,7 @@ async function bootstrap(): Promise<void> {
     // Bắt đầu chạy vòng lặp dựng hình Three.js
     engine.start();
 
-    // 10. Tạo màn hình mở đầu (Welcome & Hướng dẫn điều khiển)
+    // 11. Tạo màn hình mở đầu (Welcome & Hướng dẫn điều khiển)
     const welcomeOverlay = new WelcomeOverlay(museumData, () => {
       controller.setEnabled(true);
       canvas.focus();
@@ -133,7 +142,28 @@ async function bootstrap(): Promise<void> {
       welcomeOverlay.hide();
       const targetRoom = urlParams.get('room');
       if (targetRoom) {
-        roomManager.navigateToRoom(targetRoom);
+        await roomManager.navigateToRoom(targetRoom);
+
+        // Tham số vị trí tùy chọn (?pos=x,z)
+        const posParam = urlParams.get('pos');
+        if (posParam) {
+          const [px, pz] = posParam.split(',').map(Number);
+          if (!isNaN(px) && !isNaN(pz)) {
+            controller.setPosition(px, pz, Math.PI);
+          }
+        }
+
+        // Tham số mở ngay chi tiết hiện vật (?openExhibit=id)
+        const openExId = urlParams.get('openExhibit');
+        if (openExId) {
+          const roomData = museumData.rooms.find((r) => r.id === targetRoom);
+          const targetExData = roomData?.exhibits?.find((e) => e.id === openExId);
+          if (targetExData) {
+            setTimeout(() => {
+              exhibitManager.openDetailForExhibit(targetExData);
+            }, 600);
+          }
+        }
       }
     }
 

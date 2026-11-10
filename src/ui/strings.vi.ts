@@ -48,4 +48,19 @@ export const STRINGS_VI = {
   roomIntroExhibits: 'Quy mô trưng bày',
   closeBtn: 'Đóng (Esc)',
   navLobby: '🏛️ Sảnh chính',
+
+  // Chuỗi cho Lệnh 3: Hiện vật và bảng thông tin
+  interactPromptKey: 'Nhấn [E] hoặc chạm để xem chi tiết',
+  interactPromptSummary: 'Hiện vật trưng bày',
+  exhibitPeriod: 'Niên đại / Vị trí:',
+  exhibitOrigin: 'Xuất xứ:',
+  exhibitSource: 'Nguồn tư liệu:',
+  exhibitStatsTitle: 'Thông số khoa học:',
+  btnListenStory: '🎙️ Nghe kể chuyện',
+  btnStoryComingSoon: 'Tính năng kể chuyện sẽ được kích hoạt tại Lệnh 6',
+  waitingContent: '[CHỜ NỘI DUNG]',
+  roomProgressLabel: 'Tiến độ phòng',
+  exhibitsViewedProgress: (viewed: number, total: number) => `Đã xem ${viewed}/${total} hiện vật`,
+  rotateHint3D: 'Kéo chuột để xoay 360° • Cuộn chuột để phóng to/thu nhỏ',
+  viewedBadge: '✓ ĐÃ XEM',
 };

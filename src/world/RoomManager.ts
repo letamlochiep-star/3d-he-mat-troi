@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { MuseumData, RoomData } from '../types';
+import { MuseumData } from '../types';
 import { Engine } from '../core/Engine';
 import { Lobby } from './Lobby';
 import { RoomBuilder, RoomInstance } from './RoomBuilder';
@@ -8,6 +8,7 @@ import { FirstPersonController } from '../player/FirstPersonController';
 import { ScreenFader } from '../ui/ScreenFader';
 import { RoomIntroOverlay } from '../ui/RoomIntroOverlay';
 import { Minimap } from '../ui/Minimap';
+import { ExhibitManager } from './ExhibitManager';
 
 /**
  * Bộ quản lý chuyển cảnh giữa Sảnh chính và các phòng (F1.1, F1.2, F1.5, F2.1)
@@ -20,6 +21,7 @@ export class RoomManager {
   private readonly controller: FirstPersonController;
   private readonly screenFader: ScreenFader;
   private readonly introOverlay: RoomIntroOverlay;
+  private readonly exhibitManager: ExhibitManager;
   private minimap: Minimap | null = null;
 
   private currentRoomId = 'lobby';
@@ -34,7 +36,8 @@ export class RoomManager {
     collisionSystem: CollisionSystem,
     controller: FirstPersonController,
     screenFader: ScreenFader,
-    introOverlay: RoomIntroOverlay
+    introOverlay: RoomIntroOverlay,
+    exhibitManager: ExhibitManager
   ) {
     this.engine = engine;
     this.museumData = museumData;
@@ -43,6 +46,7 @@ export class RoomManager {
     this.controller = controller;
     this.screenFader = screenFader;
     this.introOverlay = introOverlay;
+    this.exhibitManager = exhibitManager;
 
     // Đặt sảnh chính là cảnh hiển thị ban đầu
     this.engine.scene.add(this.lobby.group);
@@ -57,18 +61,23 @@ export class RoomManager {
   }
 
   /**
-   * Cập nhật và kiểm tra cảm biến bước qua cửa trong từng khung hình
+   * Cập nhật và kiểm tra cảm biến bước qua cửa và khoảng cách hiện vật
    */
-  public update(_delta: number): void {
+  public update(delta: number): void {
+    const playerPos = this.controller.getPosition();
+
+    // 1. Cập nhật xoay hiện vật và nhãn tương tác < 3m (F2.3)
+    if (this.currentRoomInstance) {
+      this.exhibitManager.update(delta, playerPos);
+    }
+
     if (this.isTransitioning) return;
 
     // Khoảng đệm thời gian tránh trigger liên tục sau khi vừa chuyển phòng
     const now = performance.now();
     if (now - this.lastTriggerTime < 1500) return;
 
-    const playerPos = this.controller.getPosition();
-
-    // 1. Khi đang ở sảnh chính: kiểm tra các cửa vào phòng
+    // 2. Khi đang ở sảnh chính: kiểm tra các cửa vào phòng
     if (this.currentRoomId === 'lobby') {
       const lobbyDoors = this.lobby.getDoors();
       for (const door of lobbyDoors) {
@@ -79,7 +88,7 @@ export class RoomManager {
         }
       }
     } else if (this.currentRoomInstance) {
-      // 2. Khi đang ở trong phòng: kiểm tra cửa quay về sảnh chính
+      // 3. Khi đang ở trong phòng: kiểm tra cửa quay về sảnh chính
       if (this.currentRoomInstance.returnDoor.isPlayerTriggering(playerPos)) {
         this.lastTriggerTime = now;
         this.navigateToLobby();
@@ -88,7 +97,7 @@ export class RoomManager {
   }
 
   /**
-   * Chuyển vào một phòng trưng bày cụ thể (F1.1, F1.2)
+   * Chuyển vào một phòng trưng bày cụ thể (F1.1, F1.2, F2.2)
    */
   public async navigateToRoom(roomId: string): Promise<void> {
     if (this.isTransitioning || this.currentRoomId === roomId) return;
@@ -111,10 +120,13 @@ export class RoomManager {
         this.currentRoomInstance = null;
       }
 
-      // 2. Dựng phòng mới từ dữ liệu rooms[] (F1.2)
+      // 2. Dựng phòng mới từ dữ liệu rooms[] (F1.2) kèm hiện vật 3D (F2.2)
       const newRoom = RoomBuilder.buildRoom(roomData, this.collisionSystem);
       this.currentRoomInstance = newRoom;
       this.engine.scene.add(newRoom.group);
+
+      // Kích hoạt quản lý hiện vật phòng mới
+      this.exhibitManager.setExhibits(newRoom.exhibits, roomData.exhibits || []);
 
       // 3. Đặt người chơi ở lối vào của phòng mới (nhìn thẳng về phía Bắc)
       const entranceZ = roomData.size.depth / 2 - 2.2;
@@ -138,7 +150,9 @@ export class RoomManager {
     this.isTransitioning = true;
 
     await this.screenFader.fadeTransition(() => {
-      // 1. Giải phóng phòng cũ
+      // 1. Giải phóng hiện vật và phòng cũ
+      this.exhibitManager.clearExhibits();
+
       if (this.currentRoomInstance) {
         this.engine.scene.remove(this.currentRoomInstance.group);
         this.currentRoomInstance.dispose();
