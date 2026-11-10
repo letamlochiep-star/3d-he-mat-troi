@@ -35,4 +35,17 @@ export const STRINGS_VI = {
   btnStartTour: 'BẮT ĐẦU THAM QUAN',
   paused: 'Tạm dừng - Bấm để tiếp tục',
   crosshairHint: 'Di chuyển mắt nhìn đến các khu vực trong bảo tàng',
+
+  // Chuỗi cho Lệnh 2: Các phòng dựng từ dữ liệu & Chuyển cảnh
+  doorToRoom: (name: string) => `Cửa vào: ${name}`,
+  doorReturnLobby: 'Lối về Sảnh chính',
+  doorPrompt: 'Bước qua cửa để chuyển phòng',
+  minimapTitle: 'Bản đồ bảo tàng',
+  currentLocation: 'Vị trí hiện tại',
+  fastTravel: 'Chuyển nhanh đến phòng',
+  roomIntroTitle: 'Giới thiệu không gian trưng bày',
+  roomIntroTheme: 'Chủ đề',
+  roomIntroExhibits: 'Quy mô trưng bày',
+  closeBtn: 'Đóng (Esc)',
+  navLobby: '🏛️ Sảnh chính',
 };

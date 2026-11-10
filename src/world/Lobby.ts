@@ -1,11 +1,14 @@
 import * as THREE from 'three';
 import { CollisionSystem } from '../player/CollisionSystem';
 import { MuseumData } from '../types';
+import { Door } from './Door';
 
 export class Lobby {
   public readonly group: THREE.Group;
   private readonly museumData: MuseumData;
   private readonly collisionSystem: CollisionSystem;
+  private readonly doors: Door[] = [];
+  private readonly obstacleBoxes: THREE.Box3[] = [];
 
   // Kích thước sảnh chính
   public readonly width = 26;
@@ -19,8 +22,13 @@ export class Lobby {
     this.group.name = 'Lobby';
 
     this.buildLobbyArchitecture();
+    this.setupRoomDoors();
     this.setupLighting();
     this.setupBoundariesAndObstacles();
+  }
+
+  public getDoors(): Door[] {
+    return this.doors;
   }
 
   /**
@@ -166,6 +174,43 @@ export class Lobby {
   }
 
   /**
+   * Tạo mỗi phòng một cửa có biển tên trong Sảnh chính (F1.1)
+   */
+  private setupRoomDoors(): void {
+    const halfW = this.width / 2;
+    const rooms = this.museumData.rooms;
+
+    rooms.forEach((room, index) => {
+      // Phân bổ cửa đều đặn sang hai bên tường Tây (bên trái) và Đông (bên phải)
+      const isWest = index % 2 === 0;
+      const pairIndex = Math.floor(index / 2);
+
+      // Khoảng cách Z giữa các cửa
+      const zOffset = -5 + pairIndex * 6.5;
+
+      const posX = isWest ? -halfW + 0.15 : halfW - 0.15;
+      const rotY = isWest ? Math.PI / 2 : -Math.PI / 2;
+
+      const door = new Door({
+        targetRoomId: room.id,
+        targetRoomName: room.name,
+        position: new THREE.Vector3(posX, 0, zOffset),
+        rotationY: rotY,
+        width: 2.8,
+        height: 3.4,
+      });
+
+      this.doors.push(door);
+      this.group.appendChild(door.group);
+
+      // Thêm các cột của khung cửa vào danh sách vật cản
+      door.getObstacleBoxes().forEach((box) => {
+        this.obstacleBoxes.push(box);
+      });
+    });
+  }
+
+  /**
    * Xây dựng kết cấu kiến trúc sảnh 3D: Sàn đá, tường sáng, trần 7m, các cột và bệ
    */
   private buildLobbyArchitecture(): void {
@@ -245,7 +290,7 @@ export class Lobby {
     westWall.receiveShadow = true;
     this.group.appendChild(westWall);
 
-    // Len chân tường (Skirting boards) tạo chi tiết kiến trúc chân thực
+    // Len chân tường (Skirting boards)
     const skirtingMat = new THREE.MeshStandardMaterial({
       color: '#2b2722',
       roughness: 0.4,
@@ -287,7 +332,6 @@ export class Lobby {
       colMesh.receiveShadow = true;
       this.group.appendChild(colMesh);
 
-      // Thêm chân đế cột
       const baseMesh = new THREE.Mesh(
         new THREE.BoxGeometry(1.5, 0.4, 1.5),
         new THREE.MeshStandardMaterial({ color: '#2c2823', roughness: 0.4 })
@@ -297,12 +341,12 @@ export class Lobby {
       baseMesh.receiveShadow = true;
       this.group.appendChild(baseMesh);
 
-      // Đăng ký vật cản va chạm
+      // Đăng ký vật cản va chạm cột
       const box = new THREE.Box3(
         new THREE.Vector3(pos.x - 0.75, 0, pos.z - 0.75),
         new THREE.Vector3(pos.x + 0.75, this.height, pos.z + 0.75)
       );
-      this.collisionSystem.addObstacle(box);
+      this.obstacleBoxes.push(box);
     });
 
     // 6. BỤC TRUNG TÂM GIỚI THIỆU SẢNH
@@ -336,7 +380,7 @@ export class Lobby {
     this.group.appendChild(gem);
 
     // Đăng ký va chạm bục trung tâm
-    this.collisionSystem.addObstacle(
+    this.obstacleBoxes.push(
       new THREE.Box3(new THREE.Vector3(-2.0, 0, -2.0), new THREE.Vector3(2.0, 1.6, 2.0))
     );
   }
@@ -346,18 +390,15 @@ export class Lobby {
    * TUÂN THỦ NGHIÊM NGẶT: Tối đa 1 đèn đổ bóng (castShadow) trong toàn phòng
    */
   private setupLighting(): void {
-    // 1. Ánh sáng môi trường dịu ấm (Không đổ bóng)
     const hemiLight = new THREE.HemisphereLight('#fdf6ed', '#3a3127', 0.85);
     hemiLight.position.set(0, this.height, 0);
     this.group.appendChild(hemiLight);
 
-    // 2. Đèn chiếu sáng chính tạo bóng đổ mềm (DUY NHẤT 1 ĐÈN ĐỔ BÓNG THEO QUY TẮC HIỆU NĂNG)
     const dirLight = new THREE.DirectionalLight('#fff1de', 1.8);
     dirLight.position.set(6, this.height - 0.5, 5);
     dirLight.target.position.set(0, 0, 0);
     dirLight.castShadow = true;
 
-    // Cấu hình Shadow Map tối ưu
     dirLight.shadow.mapSize.width = 2048;
     dirLight.shadow.mapSize.height = 2048;
     dirLight.shadow.camera.near = 0.5;
@@ -371,19 +412,18 @@ export class Lobby {
     this.group.appendChild(dirLight);
     this.group.appendChild(dirLight.target);
 
-    // 3. Đèn rọi tường làm nổi bật bảng tên bảo tàng (Không đổ bóng để giữ hiệu năng 30fps)
     const boardSpot = new THREE.SpotLight('#ffdca8', 2.4, 12, Math.PI / 4, 0.4);
     boardSpot.position.set(0, this.height - 0.8, -this.depth / 2 + 4.5);
     boardSpot.target.position.set(0, 4.3, -this.depth / 2);
-    boardSpot.castShadow = false; // Tiết kiệm tài nguyên
+    boardSpot.castShadow = false;
     this.group.appendChild(boardSpot);
     this.group.appendChild(boardSpot.target);
   }
 
   /**
-   * Thiết lập ranh giới phòng cho hệ thống va chạm (F1.4)
+   * Khởi tạo hoặc khôi phục ranh giới và vật cản cho Sảnh chính (F1.4)
    */
-  private setupBoundariesAndObstacles(): void {
+  public setupBoundariesAndObstacles(): void {
     const halfW = this.width / 2;
     const halfD = this.depth / 2;
 
@@ -392,6 +432,11 @@ export class Lobby {
       maxX: halfW - 0.2,
       minZ: -halfD + 0.2,
       maxZ: halfD - 0.2,
+    });
+
+    this.collisionSystem.clearObstacles();
+    this.obstacleBoxes.forEach((box) => {
+      this.collisionSystem.addObstacle(box);
     });
   }
 }

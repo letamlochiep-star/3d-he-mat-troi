@@ -3,6 +3,10 @@ import { CollisionSystem } from './player/CollisionSystem';
 import { FirstPersonController } from './player/FirstPersonController';
 import { Lobby } from './world/Lobby';
 import { WelcomeOverlay } from './ui/WelcomeOverlay';
+import { ScreenFader } from './ui/ScreenFader';
+import { RoomIntroOverlay } from './ui/RoomIntroOverlay';
+import { Minimap } from './ui/Minimap';
+import { RoomManager } from './world/RoomManager';
 import { loadMuseum, MuseumValidationError } from './types';
 import { STRINGS_VI } from './ui/strings.vi';
 
@@ -81,27 +85,57 @@ async function bootstrap(): Promise<void> {
 
     // 5. Dựng Sảnh chính 3D (Lobby)
     const lobby = new Lobby(museumData, collisionSystem);
-    engine.scene.add(lobby.group);
 
     // 6. Khởi tạo bộ điều khiển người chơi góc nhìn thứ nhất (F1.3)
     const controller = new FirstPersonController(engine.camera, canvas, collisionSystem);
-
-    // Đặt người chơi ở lối vào sảnh (tọa độ Z = 8.5, mắt nhìn hướng về Bắc Z = -11)
     controller.setPosition(0, 8.5, Math.PI);
 
-    // Đăng ký controller vào vòng lặp đồ họa
+    // 7. Khởi tạo các thành phần giao diện & chuyển cảnh Lệnh 2
+    const screenFader = new ScreenFader();
+    const introOverlay = new RoomIntroOverlay();
+
+    // 8. Khởi tạo bộ quản lý phòng (RoomManager) kết nối Sảnh và các phòng (F1.1, F1.2)
+    const roomManager = new RoomManager(
+      engine,
+      museumData,
+      lobby,
+      collisionSystem,
+      controller,
+      screenFader,
+      introOverlay
+    );
+
+    // 9. Bản đồ nhỏ ở góc phải trên (F1.5)
+    const minimap = new Minimap(museumData.rooms, (targetRoomId) => {
+      roomManager.navigateTo(targetRoomId);
+    });
+    roomManager.setMinimap(minimap);
+
+    // Đăng ký controller và roomManager vào vòng lặp đồ họa
     engine.addUpdatable((delta) => {
       controller.update(delta);
+      roomManager.update(delta);
     });
 
     // Bắt đầu chạy vòng lặp dựng hình Three.js
     engine.start();
 
-    // 7. Tạo màn hình mở đầu (Welcome & Hướng dẫn điều khiển)
+    // 10. Tạo màn hình mở đầu (Welcome & Hướng dẫn điều khiển)
     const welcomeOverlay = new WelcomeOverlay(museumData, () => {
       controller.setEnabled(true);
       canvas.focus();
     });
+
+    // Hỗ trợ tham số URL thử nghiệm hoặc liên kết trực tiếp (?autostart=1&room=...)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('autostart') === '1') {
+      controller.setEnabled(true);
+      welcomeOverlay.hide();
+      const targetRoom = urlParams.get('room');
+      if (targetRoom) {
+        roomManager.navigateToRoom(targetRoom);
+      }
+    }
 
     // Nút mở lại bảng hướng dẫn trên HUD
     const btnHelp = document.getElementById('btn-show-help');
