@@ -6,6 +6,25 @@ export interface MuseumInfo {
   name: string;
   welcome: string;
   guideName: string;
+  dataNote?: string;
+}
+
+export interface ProceduralConfig {
+  body: string;
+  radius: number;
+  tiltDeg?: number;
+  clouds?: boolean;
+  atmosphere?: boolean;
+  emissive?: boolean;
+  halo?: boolean;
+  ring?: boolean;
+  retrograde?: boolean;
+  [key: string]: unknown;
+}
+
+export interface ExhibitStat {
+  label: string;
+  value: string;
 }
 
 export interface RoomSize {

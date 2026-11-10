@@ -1,138 +1,595 @@
 {
   "museum": {
-    "name": "Bảo tàng Lịch sử & Văn hóa Việt Nam",
-    "welcome": "Chào mừng bạn đến với Bảo tàng Lịch sử & Văn hóa Việt Nam. Chúc bạn có một hành trình khám phá di sản thật ý nghĩa!",
-    "guideName": "Anh Minh"
+    "name": "Bảo tàng Không gian 3D",
+    "welcome": "Chào mừng bạn đến với bảo tàng. Hôm nay mình sẽ đưa bạn đi từ Trái Đất, qua Mặt Trời, rồi ra tận rìa Hệ Mặt Trời.",
+    "guideName": "Anh Minh",
+    "dataNote": "Số liệu là giá trị trung bình đã làm tròn, lấy từ bản bảo tàng HTML ban đầu. Cần đối chiếu với nguồn chính thức (ví dụ NASA Planetary Fact Sheet) trước khi công bố. Kích thước mô hình không theo tỉ lệ thật."
   },
   "rooms": [
     {
-      "id": "phong-1",
-      "name": "Văn hóa Đông Sơn & Thời kỳ Dựng nước",
-      "theme": "Kỷ nguyên văn hóa Đông Sơn rực rỡ",
-      "intro": "Nơi trưng bày những bảo vật tiêu biểu thời kỳ Đông Sơn với nghệ thuật đúc đồng đỉnh cao của người Việt cổ.",
-      "guideIntro": "Chào bạn, đây là phòng trưng bày Văn hóa Đông Sơn. Mời bạn cùng chiêm ngưỡng những bảo vật ngàn năm tuổi.",
+      "id": "phong-trai-dat",
+      "name": "Phòng Trái Đất",
+      "theme": "Hành tinh của chúng ta và vệ tinh của nó",
+      "intro": "Quả địa cầu xoay nghiêng 23,4° đặt giữa phòng, bên cạnh là Mặt Trăng. Phòng này giới thiệu hành tinh duy nhất đã biết có sự sống.",
+      "guideIntro": "Đây là phòng Trái Đất. Bạn hãy để ý trục quay nghiêng của quả địa cầu, chính độ nghiêng ấy tạo ra bốn mùa.",
       "size": {
-        "width": 24,
+        "width": 22,
         "depth": 18,
-        "height": 6
+        "height": 8
       },
       "style": {
-        "wall": "#e8e2d6",
-        "floor": "wood",
-        "lighting": "warm",
-        "ambientAudio": "audio/dong-son.mp3"
+        "wall": "#27384d",
+        "floor": "stone",
+        "lighting": "cool",
+        "ambientAudio": null
       },
       "exhibits": [
         {
-          "id": "hv-101",
-          "type": "image",
-          "title": "Trống đồng Ngọc Lũ",
-          "period": "Thế kỷ II - III trước Công nguyên",
-          "origin": "Hà Nam, Việt Nam",
-          "summary": "Tuyệt tác nghệ thuật đúc đồng đỉnh cao thời kỳ Đông Sơn.",
-          "description": "Trống đồng Ngọc Lũ là hiện vật tiêu biểu nhất của nền văn hóa Đông Sơn, thể hiện đỉnh cao nghệ thuật đúc đồng và tư duy thẩm mỹ cổ xưa của người Việt.",
-          "story": "Cách đây hơn hai nghìn năm, người Việt cổ đã đúc nên những chiếc trống đồng vừa là nhạc khí thiêng liêng, vừa là biểu tượng quyền lực của thủ lĩnh.",
-          "source": "Bảo tàng Lịch sử Quốc gia",
-          "asset": "images/hv-101.jpg",
+          "id": "hv-trai-dat",
+          "type": "model",
+          "title": "Trái Đất",
+          "period": "Hành tinh thứ ba tính từ Mặt Trời",
+          "origin": "Hệ Mặt Trời",
+          "summary": "Hành tinh duy nhất đã biết có sự sống.",
+          "description": "Hành tinh duy nhất đã biết có sự sống. Trục quay nghiêng tạo ra bốn mùa; đại dương phủ phần lớn bề mặt.",
+          "story": "Nhìn từ xa, Trái Đất là một quả cầu xanh vì nước phủ khoảng 71% bề mặt. Trục quay của nó không đứng thẳng mà nghiêng 23,4°. Nhờ độ nghiêng ấy, trong một năm dài 365,25 ngày, mỗi bán cầu lần lượt ngả về phía Mặt Trời rồi lại ngả ra xa, và chúng ta có bốn mùa. Cho đến nay, đây vẫn là nơi duy nhất con người biết chắc có sự sống.",
+          "stats": [
+            {
+              "label": "Đường kính",
+              "value": "12.742 km"
+            },
+            {
+              "label": "Trục nghiêng",
+              "value": "23,4°"
+            },
+            {
+              "label": "Bề mặt là nước",
+              "value": "≈ 71%"
+            },
+            {
+              "label": "Một năm",
+              "value": "365,25 ngày"
+            }
+          ],
+          "source": "Số liệu trung bình làm tròn, cần đối chiếu nguồn chính thức.",
+          "asset": null,
+          "procedural": {
+            "body": "earth",
+            "radius": 2.2,
+            "tiltDeg": 23.4,
+            "clouds": true,
+            "atmosphere": true
+          },
           "audio": null,
           "position": {
-            "wall": "north",
-            "offset": -6
+            "x": 0,
+            "z": 0
           },
           "tourOrder": 1
         },
         {
-          "id": "hv-102",
-          "type": "image",
-          "title": "Thạp đồng Đào Thịnh",
-          "period": "Khoảng 2.500 năm trước",
-          "origin": "Yên Bái, Việt Nam",
-          "summary": "Thạp đồng Đông Sơn lớn nhất từng được phát hiện.",
-          "description": "Thạp đồng Đào Thịnh có kích thước đồ sộ với hoa văn khắc họa sinh động cảnh săn bắt, chèo thuyền và biểu tượng phồn thực của cư dân nông nghiệp lúa nước.",
-          "story": "Thạp đồng được tìm thấy bên bờ sông Hồng, chứa đựng những dấu tích về đời sống tâm linh và khát vọng sinh sôi phồn vinh của tổ tiên.",
-          "source": "Bảo tàng Lịch sử Quốc gia",
-          "asset": "images/hv-102.jpg",
+          "id": "hv-mat-trang",
+          "type": "model",
+          "title": "Mặt Trăng",
+          "period": "Vệ tinh tự nhiên của Trái Đất",
+          "origin": "Hệ Trái Đất – Mặt Trăng",
+          "summary": "Vệ tinh tự nhiên duy nhất của Trái Đất.",
+          "description": "Vệ tinh tự nhiên duy nhất của Trái Đất. Lực hấp dẫn của nó là nguyên nhân chính gây ra thủy triều.",
+          "story": "Mặt Trăng là người bạn đồng hành duy nhất của Trái Đất, ở cách chúng ta khoảng 384.400 km. Cứ 27,3 ngày nó đi hết một vòng quanh Trái Đất. Tuy chỉ rộng 3.474 km, lực hấp dẫn của Mặt Trăng vẫn đủ kéo nước biển dâng lên rồi hạ xuống. Mỗi lần bạn thấy nước ròng, nước lớn ở bờ biển, đó chủ yếu là do Mặt Trăng.",
+          "stats": [
+            {
+              "label": "Đường kính",
+              "value": "3.474 km"
+            },
+            {
+              "label": "Cách Trái Đất",
+              "value": "≈ 384.400 km"
+            },
+            {
+              "label": "Chu kì quay quanh",
+              "value": "27,3 ngày"
+            }
+          ],
+          "source": "Số liệu trung bình làm tròn, cần đối chiếu nguồn chính thức.",
+          "asset": null,
+          "procedural": {
+            "body": "moon",
+            "radius": 0.6,
+            "tiltDeg": 6.7
+          },
           "audio": null,
           "position": {
-            "wall": "north",
-            "offset": 6
+            "x": 6,
+            "z": -3
           },
           "tourOrder": 2
         }
       ],
       "quiz": [
         {
-          "question": "Trống đồng Ngọc Lũ thuộc nền văn hóa cổ nào của Việt Nam?",
+          "question": "Trục quay của Trái Đất nghiêng bao nhiêu độ?",
           "options": [
-            "Văn hóa Sa Huỳnh",
-            "Văn hóa Đông Sơn",
-            "Văn hóa Óc Eo",
-            "Văn hóa Đồng Đậu"
+            "0°",
+            "23,4°",
+            "45°",
+            "98°"
           ],
           "answer": 1,
-          "explain": "Trống đồng Ngọc Lũ là bảo vật tiêu biểu đỉnh cao của nền văn hóa Đông Sơn."
+          "explain": "Trục quay nghiêng 23,4°, đây là nguyên nhân tạo ra bốn mùa."
+        },
+        {
+          "question": "Khoảng bao nhiêu phần trăm bề mặt Trái Đất là nước?",
+          "options": [
+            "29%",
+            "50%",
+            "71%",
+            "90%"
+          ],
+          "answer": 2,
+          "explain": "Nước phủ khoảng 71% bề mặt Trái Đất."
+        },
+        {
+          "question": "Hiện tượng nào trên Trái Đất chủ yếu do lực hấp dẫn của Mặt Trăng gây ra?",
+          "options": [
+            "Bốn mùa",
+            "Thủy triều",
+            "Ngày và đêm",
+            "Động đất"
+          ],
+          "answer": 1,
+          "explain": "Lực hấp dẫn của Mặt Trăng là nguyên nhân chính gây ra thủy triều."
         }
       ],
       "suggestedQuestions": [
-        "Trống đồng Ngọc Lũ có niên đại vào thời kỳ nào?",
-        "Ý nghĩa hoa văn trên trống đồng là gì?",
-        "Tại sao trống đồng lại quan trọng với người Việt cổ?"
+        "Vì sao Trái Đất có bốn mùa?",
+        "Mặt Trăng cách Trái Đất bao xa?",
+        "Vì sao có thủy triều?"
       ]
     },
     {
-      "id": "phong-2",
-      "name": "Mỹ thuật & Tinh hoa Gốm Việt",
-      "theme": "Nghệ thuật tạo hình và đồ gốm truyền thống",
-      "intro": "Khám phá các dòng gốm hoa nâu, gốm men ngọc và gốm Chu Đậu nổi tiếng qua các triều đại Lý, Trần, Lê.",
-      "guideIntro": "Chào mừng bạn đến với phòng gốm truyền thống, nơi lưu giữ tinh hoa bàn tay tài hoa của các nghệ nhân đất Việt.",
+      "id": "phong-mat-troi",
+      "name": "Phòng Mặt Trời",
+      "theme": "Ngôi sao ở trung tâm Hệ Mặt Trời",
+      "intro": "Căn phòng tối với một quả cầu rực sáng ở giữa. Mặt Trời chiếm gần như toàn bộ khối lượng của Hệ Mặt Trời và giữ các hành tinh trên quỹ đạo.",
+      "guideIntro": "Mời bạn vào phòng Mặt Trời. Mọi ánh sáng trong phòng này đều phát ra từ ngôi sao ở giữa, giống như trong Hệ Mặt Trời thật.",
       "size": {
-        "width": 20,
-        "depth": 16,
-        "height": 5
+        "width": 18,
+        "depth": 18,
+        "height": 9
       },
       "style": {
-        "wall": "#f0ebe1",
+        "wall": "#1a1410",
         "floor": "stone",
-        "lighting": "warm",
-        "ambientAudio": "audio/gom-viet.mp3"
+        "lighting": "dramatic",
+        "ambientAudio": null
       },
       "exhibits": [
         {
-          "id": "hv-201",
+          "id": "hv-mat-troi",
           "type": "model",
-          "title": "Bình gốm hoa lam Chu Đậu",
-          "period": "Thế kỷ XV",
-          "origin": "Hải Dương, Việt Nam",
-          "summary": "Dòng gốm xuất khẩu trứ danh thời Lê sơ.",
-          "description": "Gốm Chu Đậu nổi tiếng với nước men tro trấu tự nhiên và họa tiết hoa lam tinh xảo thể hiện nét đẹp tâm hồn làng quê Việt.",
-          "story": "Gốm Chu Đậu từng thất truyền nhiều thế kỷ trước khi được tái phát hiện từ một chiếc bình cổ được đấu giá tại Istanbul, Thổ Nhĩ Kỳ.",
-          "source": "Bảo tàng Lịch sử Quốc gia",
-          "asset": "models/binh-chu-dau.glb",
+          "title": "Mặt Trời",
+          "period": "Ngôi sao trung tâm",
+          "origin": "Hệ Mặt Trời",
+          "summary": "Quả cầu khí nóng sáng giữ các hành tinh trên quỹ đạo.",
+          "description": "Quả cầu khí nóng sáng chiếm gần như toàn bộ khối lượng của Hệ Mặt Trời, giữ các hành tinh trên quỹ đạo.",
+          "story": "Mặt Trời không phải hành tinh mà là một ngôi sao, một quả cầu khí nóng sáng rộng khoảng 1,39 triệu km. Bề mặt của nó nóng khoảng 5.500 °C. Nếu gom hết mọi thứ trong Hệ Mặt Trời lại, riêng Mặt Trời đã chiếm khoảng 99,86% khối lượng. Chính khối lượng khổng lồ ấy giữ cho Trái Đất và các hành tinh khác quay quanh nó mà không trôi đi.",
+          "stats": [
+            {
+              "label": "Đường kính",
+              "value": "≈ 1,39 triệu km"
+            },
+            {
+              "label": "Nhiệt độ bề mặt",
+              "value": "≈ 5.500 °C"
+            },
+            {
+              "label": "Khối lượng cả hệ",
+              "value": "≈ 99,86%"
+            }
+          ],
+          "source": "Số liệu trung bình làm tròn, cần đối chiếu nguồn chính thức.",
+          "asset": null,
+          "procedural": {
+            "body": "sun",
+            "radius": 2.4,
+            "tiltDeg": 7,
+            "emissive": true,
+            "halo": true
+          },
           "audio": null,
           "position": {
             "x": 0,
-            "z": -4
+            "z": 0
           },
           "tourOrder": 1
         }
       ],
       "quiz": [
         {
-          "question": "Dòng gốm Chu Đậu nổi tiếng với nguyên liệu men độc đáo nào?",
+          "question": "Mặt Trời là loại thiên thể nào?",
           "options": [
-            "Men tro trấu",
-            "Men đá vôi",
-            "Men hóa học",
-            "Men chì"
+            "Hành tinh",
+            "Vệ tinh",
+            "Ngôi sao",
+            "Sao chổi"
           ],
-          "answer": 0,
-          "explain": "Men tro trấu là bí quyết độc đáo tạo nên độ sáng bóng và bền màu đặc trưng của gốm Chu Đậu."
+          "answer": 2,
+          "explain": "Mặt Trời là ngôi sao ở trung tâm Hệ Mặt Trời."
+        },
+        {
+          "question": "Mặt Trời chiếm khoảng bao nhiêu phần trăm khối lượng của cả Hệ Mặt Trời?",
+          "options": [
+            "50%",
+            "75%",
+            "90%",
+            "99,86%"
+          ],
+          "answer": 3,
+          "explain": "Mặt Trời chiếm khoảng 99,86% khối lượng của Hệ Mặt Trời."
+        },
+        {
+          "question": "Nhiệt độ bề mặt Mặt Trời vào khoảng bao nhiêu?",
+          "options": [
+            "465 °C",
+            "5.500 °C",
+            "100 °C",
+            "1.000 °C"
+          ],
+          "answer": 1,
+          "explain": "Bề mặt Mặt Trời nóng khoảng 5.500 °C."
         }
       ],
       "suggestedQuestions": [
-        "Gốm Chu Đậu có nguồn gốc từ đâu?",
-        "Đặc điểm nổi bật của gốm hoa lam là gì?",
-        "Hiện vật gốm Chu Đậu được tìm thấy ở đâu trên thế giới?"
+        "Mặt Trời to cỡ nào?",
+        "Vì sao các hành tinh quay quanh Mặt Trời?",
+        "Bề mặt Mặt Trời nóng bao nhiêu độ?"
+      ]
+    },
+    {
+      "id": "phong-vu-tru",
+      "name": "Phòng Vũ trụ – Các hành tinh",
+      "theme": "Bảy hành tinh còn lại của Hệ Mặt Trời, xếp từ gần đến xa Mặt Trời",
+      "intro": "Bảy hành tinh đặt trên bục theo thứ tự từ Sao Thủy đến Sao Hải Vương. Đi dọc phòng là đi từ gần Mặt Trời ra rìa Hệ Mặt Trời.",
+      "guideIntro": "Đây là phòng các hành tinh. Chúng ta bắt đầu từ Sao Thủy nhỏ bé ở gần Mặt Trời nhất, rồi đi dần ra Sao Hải Vương xa xôi.",
+      "size": {
+        "width": 40,
+        "depth": 16,
+        "height": 8
+      },
+      "style": {
+        "wall": "#0f1422",
+        "floor": "stone",
+        "lighting": "dramatic",
+        "ambientAudio": null
+      },
+      "exhibits": [
+        {
+          "id": "hv-sao-thuy",
+          "type": "model",
+          "title": "Sao Thủy",
+          "period": "Hành tinh thứ nhất",
+          "origin": "Hệ Mặt Trời",
+          "summary": "Hành tinh nhỏ nhất và gần Mặt Trời nhất.",
+          "description": "Hành tinh nhỏ nhất và gần Mặt Trời nhất. Bề mặt đá đầy hố va chạm, gần như không có khí quyển.",
+          "story": "Sao Thủy là hành tinh nhỏ nhất, chỉ rộng 4.879 km, và ở gần Mặt Trời nhất. Nó chạy rất nhanh: một năm ở đây chỉ dài 88 ngày Trái Đất. Sao Thủy gần như không có khí quyển và cũng không có vệ tinh nào. Bề mặt đá của nó lỗ chỗ hố va chạm, trông khá giống Mặt Trăng của chúng ta.",
+          "stats": [
+            {
+              "label": "Đường kính",
+              "value": "4.879 km"
+            },
+            {
+              "label": "Một năm",
+              "value": "88 ngày"
+            },
+            {
+              "label": "Vệ tinh",
+              "value": "Không có"
+            }
+          ],
+          "source": "Số liệu trung bình làm tròn, cần đối chiếu nguồn chính thức.",
+          "asset": null,
+          "procedural": {
+            "body": "mercury",
+            "radius": 0.5,
+            "tiltDeg": 0
+          },
+          "audio": null,
+          "position": {
+            "x": -15,
+            "z": 0
+          },
+          "tourOrder": 1
+        },
+        {
+          "id": "hv-sao-kim",
+          "type": "model",
+          "title": "Sao Kim",
+          "period": "Hành tinh thứ hai",
+          "origin": "Hệ Mặt Trời",
+          "summary": "Hành tinh nóng nhất, tự quay ngược chiều và rất chậm.",
+          "description": "Khí quyển CO₂ dày đặc giữ nhiệt khiến đây là hành tinh nóng nhất. Sao Kim tự quay ngược chiều và rất chậm.",
+          "story": "Sao Kim to gần bằng Trái Đất, nhưng là một thế giới rất khác. Lớp khí quyển CO₂ dày đặc giữ nhiệt lại, khiến bề mặt nóng khoảng 465 °C, nóng nhất trong các hành tinh. Sao Kim còn tự quay ngược chiều và rất chậm: một ngày ở đây dài 243 ngày Trái Đất, trong khi một năm chỉ dài 225 ngày. Nghĩa là ở Sao Kim, một ngày dài hơn một năm.",
+          "stats": [
+            {
+              "label": "Đường kính",
+              "value": "12.104 km"
+            },
+            {
+              "label": "Nhiệt độ bề mặt",
+              "value": "≈ 465 °C"
+            },
+            {
+              "label": "Một ngày",
+              "value": "243 ngày Trái Đất"
+            },
+            {
+              "label": "Một năm",
+              "value": "225 ngày"
+            }
+          ],
+          "source": "Số liệu trung bình làm tròn, cần đối chiếu nguồn chính thức.",
+          "asset": null,
+          "procedural": {
+            "body": "venus",
+            "radius": 0.72,
+            "tiltDeg": 3,
+            "retrograde": true
+          },
+          "audio": null,
+          "position": {
+            "x": -10,
+            "z": 0
+          },
+          "tourOrder": 2
+        },
+        {
+          "id": "hv-sao-hoa",
+          "type": "model",
+          "title": "Sao Hỏa",
+          "period": "Hành tinh thứ tư",
+          "origin": "Hệ Mặt Trời",
+          "summary": "Hành tinh Đỏ, có núi lửa Olympus Mons cao khoảng 22 km.",
+          "description": "Hành tinh Đỏ, màu do bụi oxit sắt. Có núi lửa Olympus Mons cao khoảng 22 km và hai chỏm băng ở cực.",
+          "story": "Người ta gọi Sao Hỏa là Hành tinh Đỏ vì bề mặt phủ bụi oxit sắt, giống như gỉ sắt. Ở đây có núi lửa Olympus Mons cao khoảng 22 km, và hai cực có chỏm băng. Sao Hỏa có hai vệ tinh nhỏ tên là Phobos và Deimos. Một năm trên Sao Hỏa dài 687 ngày Trái Đất, gần gấp đôi năm của chúng ta.",
+          "stats": [
+            {
+              "label": "Đường kính",
+              "value": "6.779 km"
+            },
+            {
+              "label": "Một năm",
+              "value": "687 ngày"
+            },
+            {
+              "label": "Vệ tinh",
+              "value": "Phobos, Deimos"
+            }
+          ],
+          "source": "Số liệu trung bình làm tròn, cần đối chiếu nguồn chính thức.",
+          "asset": null,
+          "procedural": {
+            "body": "mars",
+            "radius": 0.62,
+            "tiltDeg": 25.2
+          },
+          "audio": null,
+          "position": {
+            "x": -5,
+            "z": 0
+          },
+          "tourOrder": 3
+        },
+        {
+          "id": "hv-sao-moc",
+          "type": "model",
+          "title": "Sao Mộc",
+          "period": "Hành tinh thứ năm",
+          "origin": "Hệ Mặt Trời",
+          "summary": "Hành tinh khí khổng lồ, lớn nhất Hệ Mặt Trời.",
+          "description": "Hành tinh khí khổng lồ, lớn nhất Hệ Mặt Trời. Vết Đỏ Lớn là một cơn bão đã được quan sát hàng trăm năm.",
+          "story": "Sao Mộc là hành tinh lớn nhất Hệ Mặt Trời, rộng 139.820 km. Nó là một hành tinh khí khổng lồ và quay rất nhanh: một ngày chỉ dài khoảng 9,9 giờ, dù một năm kéo dài gần 12 năm Trái Đất. Bạn có thấy đốm đỏ trên mô hình không? Đó là Vết Đỏ Lớn, một cơn bão mà con người đã quan sát được hàng trăm năm.",
+          "stats": [
+            {
+              "label": "Đường kính",
+              "value": "139.820 km"
+            },
+            {
+              "label": "Một ngày",
+              "value": "≈ 9,9 giờ"
+            },
+            {
+              "label": "Một năm",
+              "value": "≈ 11,9 năm"
+            }
+          ],
+          "source": "Số liệu trung bình làm tròn, cần đối chiếu nguồn chính thức.",
+          "asset": null,
+          "procedural": {
+            "body": "jupiter",
+            "radius": 1.1,
+            "tiltDeg": 3.1
+          },
+          "audio": null,
+          "position": {
+            "x": 1,
+            "z": 0
+          },
+          "tourOrder": 4
+        },
+        {
+          "id": "hv-sao-tho",
+          "type": "model",
+          "title": "Sao Thổ",
+          "period": "Hành tinh thứ sáu",
+          "origin": "Hệ Mặt Trời",
+          "summary": "Nổi bật với hệ vành đai băng và đá.",
+          "description": "Nổi bật với hệ vành đai gồm vô số mảnh băng và đá. Khối lượng riêng trung bình nhỏ hơn nước.",
+          "story": "Sao Thổ dễ nhận ra nhất nhờ hệ vành đai bao quanh. Vành đai ấy không phải một tấm liền mà gồm vô số mảnh băng và đá. Sao Thổ rất to, rộng 116.460 km, nhưng lại nhẹ so với kích thước: khối lượng riêng trung bình của nó nhỏ hơn nước. Một ngày ở đây dài khoảng 10,7 giờ, còn một năm dài khoảng 29,4 năm Trái Đất.",
+          "stats": [
+            {
+              "label": "Đường kính",
+              "value": "116.460 km"
+            },
+            {
+              "label": "Một ngày",
+              "value": "≈ 10,7 giờ"
+            },
+            {
+              "label": "Một năm",
+              "value": "≈ 29,4 năm"
+            }
+          ],
+          "source": "Số liệu trung bình làm tròn, cần đối chiếu nguồn chính thức.",
+          "asset": null,
+          "procedural": {
+            "body": "saturn",
+            "radius": 0.9,
+            "tiltDeg": 26.7,
+            "ring": true
+          },
+          "audio": null,
+          "position": {
+            "x": 7,
+            "z": 0
+          },
+          "tourOrder": 5
+        },
+        {
+          "id": "hv-sao-thien-vuong",
+          "type": "model",
+          "title": "Sao Thiên Vương",
+          "period": "Hành tinh thứ bảy",
+          "origin": "Hệ Mặt Trời",
+          "summary": "Hành tinh băng khổng lồ có trục quay nghiêng gần 98°.",
+          "description": "Hành tinh băng khổng lồ có trục quay nghiêng gần 98°, nên nó gần như “nằm lăn” trên quỹ đạo.",
+          "story": "Sao Thiên Vương là một hành tinh băng khổng lồ, rộng 50.724 km. Điều lạ nhất ở nó là trục quay nghiêng gần 98°. Trong khi các hành tinh khác quay như con quay đứng, Sao Thiên Vương gần như nằm lăn trên quỹ đạo. Nó đi rất chậm quanh Mặt Trời: một năm ở đây dài khoảng 84 năm Trái Đất.",
+          "stats": [
+            {
+              "label": "Đường kính",
+              "value": "50.724 km"
+            },
+            {
+              "label": "Trục nghiêng",
+              "value": "≈ 98°"
+            },
+            {
+              "label": "Một năm",
+              "value": "≈ 84 năm"
+            }
+          ],
+          "source": "Số liệu trung bình làm tròn, cần đối chiếu nguồn chính thức.",
+          "asset": null,
+          "procedural": {
+            "body": "uranus",
+            "radius": 0.78,
+            "tiltDeg": 97.8
+          },
+          "audio": null,
+          "position": {
+            "x": 12,
+            "z": 0
+          },
+          "tourOrder": 6
+        },
+        {
+          "id": "hv-sao-hai-vuong",
+          "type": "model",
+          "title": "Sao Hải Vương",
+          "period": "Hành tinh thứ tám",
+          "origin": "Hệ Mặt Trời",
+          "summary": "Hành tinh xa Mặt Trời nhất, màu xanh thẫm.",
+          "description": "Hành tinh xa Mặt Trời nhất, màu xanh thẫm do khí mê-tan. Gió ở đây thuộc loại mạnh nhất Hệ Mặt Trời.",
+          "story": "Chúng ta đã đến hành tinh xa Mặt Trời nhất. Sao Hải Vương có màu xanh thẫm do khí mê-tan trong khí quyển. Ở nơi xa xôi và lạnh lẽo này, gió lại thuộc loại mạnh nhất Hệ Mặt Trời, có thể tới khoảng 2.000 km/h. Sao Hải Vương đi một vòng quanh Mặt Trời mất khoảng 165 năm Trái Đất.",
+          "stats": [
+            {
+              "label": "Đường kính",
+              "value": "49.244 km"
+            },
+            {
+              "label": "Tốc độ gió",
+              "value": "tới ≈ 2.000 km/h"
+            },
+            {
+              "label": "Một năm",
+              "value": "≈ 165 năm"
+            }
+          ],
+          "source": "Số liệu trung bình làm tròn, cần đối chiếu nguồn chính thức.",
+          "asset": null,
+          "procedural": {
+            "body": "neptune",
+            "radius": 0.76,
+            "tiltDeg": 28.3
+          },
+          "audio": null,
+          "position": {
+            "x": 17,
+            "z": 0
+          },
+          "tourOrder": 7
+        }
+      ],
+      "quiz": [
+        {
+          "question": "Hành tinh nào lớn nhất Hệ Mặt Trời?",
+          "options": [
+            "Sao Thổ",
+            "Sao Mộc",
+            "Sao Hải Vương",
+            "Sao Kim"
+          ],
+          "answer": 1,
+          "explain": "Sao Mộc rộng 139.820 km, lớn nhất Hệ Mặt Trời."
+        },
+        {
+          "question": "Ở hành tinh nào một ngày dài hơn một năm?",
+          "options": [
+            "Sao Thủy",
+            "Sao Hỏa",
+            "Sao Kim",
+            "Sao Thiên Vương"
+          ],
+          "answer": 2,
+          "explain": "Sao Kim tự quay một vòng mất 243 ngày Trái Đất, còn một năm chỉ dài 225 ngày."
+        },
+        {
+          "question": "Vành đai của Sao Thổ được tạo thành từ gì?",
+          "options": [
+            "Khí nóng",
+            "Vô số mảnh băng và đá",
+            "Bụi oxit sắt",
+            "Nước lỏng"
+          ],
+          "answer": 1,
+          "explain": "Vành đai Sao Thổ gồm vô số mảnh băng và đá."
+        },
+        {
+          "question": "Hành tinh nào có trục quay nghiêng gần 98°, gần như “nằm lăn” trên quỹ đạo?",
+          "options": [
+            "Sao Thiên Vương",
+            "Sao Hải Vương",
+            "Sao Mộc",
+            "Sao Hỏa"
+          ],
+          "answer": 0,
+          "explain": "Trục quay của Sao Thiên Vương nghiêng gần 98°."
+        },
+        {
+          "question": "Vì sao Sao Hỏa có màu đỏ?",
+          "options": [
+            "Do rất nóng",
+            "Do khí mê-tan",
+            "Do bụi oxit sắt",
+            "Do núi lửa đang phun"
+          ],
+          "answer": 2,
+          "explain": "Bề mặt Sao Hỏa phủ bụi oxit sắt nên có màu đỏ."
+        }
+      ],
+      "suggestedQuestions": [
+        "Hành tinh nào nóng nhất?",
+        "Vết Đỏ Lớn trên Sao Mộc là gì?",
+        "Vì sao Sao Hải Vương có màu xanh?"
       ]
     }
   ]

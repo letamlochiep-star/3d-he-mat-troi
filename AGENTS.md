@@ -1,8 +1,8 @@
-# Dự án: Bảo tàng ảo 3D
+# Dự án: Bảo tàng ảo 3D – Bảo tàng Không gian 3D (Hệ Mặt Trời)
 
 ## Mục tiêu
-Website bảo tàng 3D nhiều phòng, có hướng dẫn viên 3D biết kể chuyện và trả lời câu hỏi.
-Người dùng: Học sinh, sinh viên, khách tham quan đại chúng. Chạy trên trình duyệt máy tính và điện thoại.
+Website bảo tàng 3D khám phá Hệ Mặt Trời (từ Trái Đất, Mặt Trời đến rìa Hệ Mặt Trời), có hướng dẫn viên 3D (Anh Minh) đồng hành kể chuyện và trả lời câu hỏi.
+Người dùng: Học sinh, sinh viên, người yêu thiên văn học và khách tham quan đại chúng. Chạy trên trình duyệt máy tính và điện thoại.
 
 ## Công nghệ bắt buộc
 - Vite + TypeScript (strict). Three.js cho 3D. HTML/CSS thuần cho giao diện.
