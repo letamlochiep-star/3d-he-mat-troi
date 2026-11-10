@@ -158,6 +158,10 @@
       .brand-badge strong {
         font-size: 14px;
       }
+      #chat-drawer {
+        width: 100vw !important;
+        max-width: 100vw !important;
+      }
     }
   </style>
 </head>
@@ -173,16 +177,21 @@
         <strong id="hud-museum-name">Bảo tàng ảo 3D</strong>
         <span class="guide-tag" id="hud-guide-name">Hướng dẫn viên</span>
       </div>
-      <button type="button" class="help-btn" id="btn-show-help" aria-label="Xem hướng dẫn điều khiển">
-        ℹ️ Hướng dẫn [H]
-      </button>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" class="help-btn" id="btn-open-chat" aria-label="Hỏi đáp cùng hướng dẫn viên" style="background: rgba(31, 111, 235, 0.3); border-color: rgba(56, 139, 253, 0.4); color: #79c0ff;">
+          💬 Hỏi hướng dẫn viên [T]
+        </button>
+        <button type="button" class="help-btn" id="btn-show-help" aria-label="Xem hướng dẫn điều khiển">
+          ℹ️ Hướng dẫn [H]
+        </button>
+      </div>
     </header>
 
     <!-- Tâm ngắm -->
     <div class="crosshair" aria-hidden="true"></div>
 
     <div class="bottom-hint">
-      Di chuyển: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> • Nhìn: <kbd>Kéo chuột</kbd> • Chạy nhanh: <kbd>Shift</kbd>
+      Di chuyển: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> • Nhìn: <kbd>Kéo chuột</kbd> • Hỏi đáp: <kbd>T</kbd> • Hướng dẫn: <kbd>H</kbd>
     </div>
   </div>
 

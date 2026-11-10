@@ -125,6 +125,10 @@ export class ExhibitManager {
     return this.closestExhibit;
   }
 
+  public getCurrentExhibit(): ExhibitData | null {
+    return this.closestExhibit ? this.closestExhibit.data : null;
+  }
+
   public getClosestExhibitPosition(): THREE.Vector3 | null {
     return this.closestExhibit ? this.closestExhibit.centerPosition : null;
   }

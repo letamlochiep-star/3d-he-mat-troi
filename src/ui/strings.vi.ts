@@ -71,4 +71,22 @@ export const STRINGS_VI = {
   btnUnmuteSpeech: 'Bật tiếng [M]',
   speechMutedNotice: 'Đã tắt tiếng (chỉ hiện phụ đề)',
   speechUnmutedNotice: 'Đã bật tiếng',
+
+  // Chuỗi cho Lệnh 5: Trợ lý hỏi đáp AI (F4.1 - F4.6)
+  btnOpenChat: '💬 Hỏi hướng dẫn viên [T]',
+  chatDrawerTitle: 'Trò chuyện cùng Hướng dẫn viên',
+  chatSuggestedQuestions: 'Gợi ý câu hỏi trong phòng:',
+  chatInputPlaceholder: 'Đặt câu hỏi cho hướng dẫn viên (tối đa 300 ký tự)...',
+  btnSend: 'Gửi',
+  btnVoiceStart: 'Nói qua micro',
+  btnVoiceStop: 'Dừng ghi âm',
+  voiceListening: 'Đang lắng nghe câu hỏi của bạn...',
+  voiceNotSupported: 'Trình duyệt không hỗ trợ nhận diện giọng nói.',
+  charCountLimit: 'Tối đa 300 ký tự',
+  chatRateLimitExceeded: 'Bạn đã đạt giới hạn 20 câu hỏi trong 1 giờ. Vui lòng đợi hoặc tham khảo các bài thuyết minh có sẵn trong phòng.',
+  chatErrorFallback: 'Hiện tại đường truyền đến trợ lý AI đang gián đoạn. Bạn có thể đọc bảng thuyết minh chi tiết hoặc hỏi lại sau ít phút.',
+  chatMissingKeyNotice: 'Máy chủ chưa cấu hình GEMINI_API_KEY trong tệp .env.local. Trợ lý đang hoạt động ở chế độ giải đáp cơ bản.',
+  chatThinking: 'Anh Minh đang suy nghĩ...',
 };
+
+export const strings = STRINGS_VI;

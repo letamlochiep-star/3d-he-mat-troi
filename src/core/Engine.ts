@@ -1,5 +1,12 @@
 import * as THREE from 'three';
 
+// Khả năng tương thích cho các lệnh thêm đối tượng con 3D
+if (typeof (THREE.Object3D.prototype as any).appendChild === 'undefined') {
+  (THREE.Object3D.prototype as any).appendChild = function(this: THREE.Object3D, ...children: THREE.Object3D[]) {
+    return this.add(...children);
+  };
+}
+
 export interface Updatable {
   update(delta: number): void;
 }

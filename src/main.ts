@@ -13,6 +13,7 @@ import { ExhibitManager } from './world/ExhibitManager';
 import { SpeechService } from './guide/SpeechService';
 import { SubtitleHUD } from './ui/SubtitleHUD';
 import { Guide } from './guide/Guide';
+import { ChatDrawer } from './ui/ChatDrawer';
 import { loadMuseum, MuseumValidationError } from './types';
 import { STRINGS_VI } from './ui/strings.vi';
 
@@ -135,6 +136,58 @@ async function bootstrap(): Promise<void> {
     });
     roomManager.setMinimap(minimap);
 
+    // 12. Trợ lý hỏi đáp AI cùng Hướng dẫn viên ảo (F4.1 - F4.6)
+    const chatDrawer = new ChatDrawer({
+      guideName: museumData.museum.guideName,
+      onOpenStateChange: (isOpen) => {
+        controller.setEnabled(!isOpen);
+      },
+      onGuideSpeak: (text) => {
+        guide.answerQuestion(text);
+      },
+      onGetContext: () => {
+        const currentRoomId = roomManager.getCurrentRoomId();
+        const currentExhibit = exhibitManager.getCurrentExhibit();
+        return {
+          roomId: currentRoomId === 'lobby' ? undefined : currentRoomId,
+          exhibitId: currentExhibit?.id,
+        };
+      },
+    });
+
+    // Cập nhật 3 câu hỏi gợi ý khi đổi phòng
+    const defaultLobbyQuestions = [
+      'Bảo tàng này trưng bày những gì?',
+      'Làm sao để di chuyển giữa các phòng?',
+      'Hệ Mặt Trời có bao nhiêu hành tinh?',
+    ];
+    chatDrawer.setSuggestedQuestions(defaultLobbyQuestions);
+
+    roomManager.addRoomChangeListener((room) => {
+      if (room && room.suggestedQuestions && room.suggestedQuestions.length > 0) {
+        chatDrawer.setSuggestedQuestions(room.suggestedQuestions);
+      } else {
+        chatDrawer.setSuggestedQuestions(defaultLobbyQuestions);
+      }
+    });
+
+    // Nút mở chat trên HUD
+    const btnOpenChat = document.getElementById('btn-open-chat');
+    btnOpenChat?.addEventListener('click', () => {
+      chatDrawer.toggle();
+    });
+
+    // Phím tắt T để mở/đóng khung chat
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'KeyT' || e.key === 't' || e.key === 'T') {
+        const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+        if (tag !== 'input' && tag !== 'textarea') {
+          e.preventDefault();
+          chatDrawer.toggle();
+        }
+      }
+    });
+
     // Đăng ký controller và roomManager vào vòng lặp đồ họa
     engine.addUpdatable((delta) => {
       controller.update(delta);
@@ -184,6 +237,19 @@ async function bootstrap(): Promise<void> {
       } else {
         // Tự động chào ở sảnh nếu không chỉ định phòng
         guide.greetLobby(museumData.museum.welcome);
+      }
+
+      // Tham số tự động mở khung chat (?openChat=1)
+      if (urlParams.get('openChat') === '1') {
+        if (urlParams.get('demoChat') === '1') {
+          chatDrawer.addDemoConversation(
+            'Mặt Trời to cỡ nào hả anh Minh?',
+            'Chào bạn! Mặt Trời là ngôi sao ở trung tâm với đường kính khoảng 1.392.700 km, gấp khoảng 109 lần Trái Đất và chiếm tới 99,86% tổng khối lượng toàn Hệ Mặt Trời! Bạn có muốn tìm hiểu tiếp về nhiệt độ bề mặt của Mặt Trời không?'
+          );
+        }
+        setTimeout(() => {
+          chatDrawer.open(true);
+        }, 800);
       }
     }
 

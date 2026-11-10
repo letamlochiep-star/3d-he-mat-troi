@@ -43,7 +43,7 @@ export class Guide {
 
     // Dựng mô hình 3D theo đúng đặc tả F3.1 và F3.2
     this.proceduralModel = new ProceduralGuideModel(guideName);
-    this.group.appendChild(this.proceduralModel.group);
+    this.group.add(this.proceduralModel.group);
 
     this.group.position.copy(this.currentPosition);
     this.group.rotation.y = this.currentYaw;
@@ -114,6 +114,26 @@ export class Guide {
     this.speechService.speak(
       guideIntro,
       audioUrl,
+      () => {
+        this.proceduralModel.setAnimation('talk');
+      },
+      () => {
+        this.proceduralModel.setAnimation('idle');
+        this.subtitleHUD.hide();
+      }
+    );
+  }
+
+  /**
+   * Trả lời câu hỏi người dùng đặt cho hướng dẫn viên (Lệnh 5: F4.4)
+   */
+  public answerQuestion(text: string): void {
+    this.proceduralModel.setAnimation('talk');
+    this.subtitleHUD.showText(text);
+
+    this.speechService.speak(
+      text,
+      null,
       () => {
         this.proceduralModel.setAnimation('talk');
       },

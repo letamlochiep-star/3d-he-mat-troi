@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { MuseumData } from '../types';
+import { MuseumData, RoomData } from '../types';
 import { Engine } from '../core/Engine';
 import { Lobby } from './Lobby';
 import { RoomBuilder, RoomInstance } from './RoomBuilder';
@@ -30,6 +30,7 @@ export class RoomManager {
   private currentRoomInstance: RoomInstance | null = null;
   private isTransitioning = false;
   private lastTriggerTime = 0;
+  private roomChangeListeners: Array<(room: RoomData | null) => void> = [];
 
   constructor(
     engine: Engine,
@@ -64,6 +65,25 @@ export class RoomManager {
 
   public getCurrentRoomId(): string {
     return this.currentRoomId;
+  }
+
+  public getCurrentRoomData(): RoomData | null {
+    if (this.currentRoomId === 'lobby') return null;
+    return this.museumData.rooms.find((r) => r.id === this.currentRoomId) || null;
+  }
+
+  public addRoomChangeListener(listener: (room: RoomData | null) => void): void {
+    this.roomChangeListeners.push(listener);
+  }
+
+  private notifyRoomChange(room: RoomData | null): void {
+    for (const listener of this.roomChangeListeners) {
+      try {
+        listener(room);
+      } catch (err) {
+        console.error('Lỗi trong roomChangeListener:', err);
+      }
+    }
   }
 
   /**
@@ -163,6 +183,8 @@ export class RoomManager {
       if (this.guide) {
         this.guide.introduceRoom(roomId, roomData.guideIntro, roomData.style?.ambientAudio);
       }
+
+      this.notifyRoomChange(roomData);
     });
 
     this.isTransitioning = false;
@@ -198,6 +220,7 @@ export class RoomManager {
       // 4. Cập nhật Minimap & ẩn bảng giới thiệu
       this.minimap?.setCurrentRoom('lobby');
       this.introOverlay.hide();
+      this.notifyRoomChange(null);
     });
 
     this.isTransitioning = false;
