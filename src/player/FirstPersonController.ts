@@ -46,6 +46,19 @@ export class FirstPersonController {
   private isPointerLocked = false;
   private enabled = false;
 
+  // Trạng thái Tour có hướng dẫn & chuyển động camera mượt (Lệnh 6: F3.5)
+  private isTourMode = false;
+  private isMovingTransition = false;
+  private transitionStartPos = new THREE.Vector3();
+  private transitionTargetPos = new THREE.Vector3();
+  private transitionStartYaw = 0;
+  private transitionTargetYaw = 0;
+  private transitionProgress = 0;
+  private transitionDuration = 1.6;
+  private onTransitionComplete: (() => void) | null = null;
+  private onPlayerMoveAttemptListener: (() => void) | null = null;
+  private prefersReducedMotion = false;
+
   constructor(
     camera: THREE.PerspectiveCamera,
     domElement: HTMLElement,
@@ -54,6 +67,11 @@ export class FirstPersonController {
     this.camera = camera;
     this.domElement = domElement;
     this.collisionSystem = collisionSystem;
+
+    // Tự động kiểm tra cài đặt giảm chuyển động của hệ điều hành
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
 
     // Chiều cao mắt cố định 1.65m theo đặc tả
     this.camera.position.set(0, 1.65, 8);
@@ -107,18 +125,22 @@ export class FirstPersonController {
         case 'KeyW':
         case 'ArrowUp':
           this.keys.forward = true;
+          if (this.isTourMode) this.onPlayerMoveAttemptListener?.();
           break;
         case 'KeyS':
         case 'ArrowDown':
           this.keys.backward = true;
+          if (this.isTourMode) this.onPlayerMoveAttemptListener?.();
           break;
         case 'KeyA':
         case 'ArrowLeft':
           this.keys.left = true;
+          if (this.isTourMode) this.onPlayerMoveAttemptListener?.();
           break;
         case 'KeyD':
         case 'ArrowRight':
           this.keys.right = true;
+          if (this.isTourMode) this.onPlayerMoveAttemptListener?.();
           break;
         case 'ShiftLeft':
         case 'ShiftRight':
@@ -362,6 +384,10 @@ export class FirstPersonController {
       this.joystickStickEl.style.transform = `translate(-50%, -50%) translate(${stickX}px, ${stickY}px)`;
     }
 
+    if (this.isTourMode && clampedDist > 10) {
+      this.onPlayerMoveAttemptListener?.();
+    }
+
     // Chuẩn hóa vector [-1, 1]
     this.joystickVector = {
       x: stickX / this.joystickMaxRadius,
@@ -372,6 +398,39 @@ export class FirstPersonController {
   // --- 4. Cập nhật vị trí mỗi khung hình (gọi từ render loop) ---
   public update(delta: number): void {
     if (!this.enabled) return;
+
+    // Xử lý chuyển động camera mượt mà trong chế độ Tour (F3.5)
+    if (this.isMovingTransition) {
+      this.transitionProgress += delta / this.transitionDuration;
+      const t = Math.min(1, Math.max(0, this.transitionProgress));
+
+      // Easing cubic mượt mà: smoothstep
+      const ease = t * t * (3 - 2 * t);
+
+      this.camera.position.lerpVectors(this.transitionStartPos, this.transitionTargetPos, ease);
+      this.camera.position.y = 1.65; // Đảm bảo chiều cao mắt cố định 1.65m
+
+      // Nội suy góc quay Yaw ngắn nhất quanh vòng tròn
+      let diff = (this.transitionTargetYaw - this.transitionStartYaw) % (Math.PI * 2);
+      if (diff > Math.PI) diff -= Math.PI * 2;
+      if (diff < -Math.PI) diff += Math.PI * 2;
+      this.yaw = this.transitionStartYaw + diff * ease;
+      this.pitch = this.pitch * (1 - ease);
+      this.updateCameraRotation();
+
+      if (t >= 1) {
+        this.isMovingTransition = false;
+        this.camera.position.copy(this.transitionTargetPos);
+        this.camera.position.y = 1.65;
+        this.yaw = this.transitionTargetYaw;
+        this.pitch = 0;
+        this.updateCameraRotation();
+        const cb = this.onTransitionComplete;
+        this.onTransitionComplete = null;
+        cb?.();
+      }
+      return;
+    }
 
     // Vector hướng di chuyển cục bộ
     let inputX = 0;
@@ -442,5 +501,53 @@ export class FirstPersonController {
 
   public getYaw(): number {
     return this.yaw;
+  }
+
+  public setTourMode(active: boolean, onPlayerMoveAttempt?: () => void): void {
+    this.isTourMode = active;
+    this.onPlayerMoveAttemptListener = onPlayerMoveAttempt || null;
+    if (!active) {
+      this.stopTransition();
+    }
+  }
+
+  public getIsTourMode(): boolean {
+    return this.isTourMode;
+  }
+
+  public setReducedMotion(enabled: boolean): void {
+    this.prefersReducedMotion = enabled;
+  }
+
+  public isReducedMotion(): boolean {
+    return this.prefersReducedMotion;
+  }
+
+  public smoothMoveTo(
+    targetPos: THREE.Vector3,
+    targetYaw: number,
+    duration = 1.8,
+    onComplete?: () => void
+  ): void {
+    if (this.prefersReducedMotion || duration <= 0) {
+      this.setPosition(targetPos.x, targetPos.z, targetYaw);
+      onComplete?.();
+      return;
+    }
+
+    this.isMovingTransition = true;
+    this.transitionStartPos.copy(this.camera.position);
+    this.transitionTargetPos.copy(targetPos);
+    this.transitionTargetPos.y = 1.65;
+    this.transitionStartYaw = this.yaw;
+    this.transitionTargetYaw = targetYaw;
+    this.transitionDuration = Math.max(0.4, duration);
+    this.transitionProgress = 0;
+    this.onTransitionComplete = onComplete || null;
+  }
+
+  public stopTransition(): void {
+    this.isMovingTransition = false;
+    this.onTransitionComplete = null;
   }
 }

@@ -14,6 +14,7 @@ import { SpeechService } from './guide/SpeechService';
 import { SubtitleHUD } from './ui/SubtitleHUD';
 import { Guide } from './guide/Guide';
 import { ChatDrawer } from './ui/ChatDrawer';
+import { TourManager } from './guide/TourManager';
 import { loadMuseum, MuseumValidationError } from './types';
 import { STRINGS_VI } from './ui/strings.vi';
 
@@ -136,7 +137,31 @@ async function bootstrap(): Promise<void> {
     });
     roomManager.setMinimap(minimap);
 
-    // 12. Trợ lý hỏi đáp AI cùng Hướng dẫn viên ảo (F4.1 - F4.6)
+    // 12. Quản lý Tour có hướng dẫn & Kể chuyện hiện vật (Lệnh 6: F3.5 & F3.6)
+    const tourManager = new TourManager(museumData, roomManager, controller, guide);
+
+    // Kích hoạt tính năng "Nghe kể chuyện" từ bảng chi tiết hiện vật
+    exhibitManager.setOnListenStory((exhibit) => {
+      // Hướng dẫn viên bước tới cạnh hiện vật và kể câu chuyện
+      const pos = exhibit.position as any;
+      const exX = Array.isArray(pos) ? pos[0] || 0 : Number(pos?.x) || 0;
+      const exZ = Array.isArray(pos) ? pos[2] || 0 : Number(pos?.z) || 0;
+      guide.walkTo(exX + 1.5, exZ + 1.4, Math.PI + 0.4, () => {
+        guide.tellStory(exhibit);
+      });
+    });
+
+    // Nút Bắt đầu Tour trên HUD
+    const btnToggleTour = document.getElementById('btn-toggle-tour');
+    btnToggleTour?.addEventListener('click', () => {
+      if (tourManager.getIsActive()) {
+        tourManager.togglePause();
+      } else {
+        tourManager.startTour(0);
+      }
+    });
+
+    // 13. Trợ lý hỏi đáp AI cùng Hướng dẫn viên ảo (F4.1 - F4.6)
     const chatDrawer = new ChatDrawer({
       guideName: museumData.museum.guideName,
       onOpenStateChange: (isOpen) => {
@@ -197,46 +222,86 @@ async function bootstrap(): Promise<void> {
     // Bắt đầu chạy vòng lặp dựng hình Three.js
     engine.start();
 
-    // 12. Tạo màn hình mở đầu (Welcome & Hướng dẫn điều khiển)
-    const welcomeOverlay = new WelcomeOverlay(museumData, () => {
-      controller.setEnabled(true);
-      canvas.focus();
-      // Khi bắt đầu vào sảnh: Hướng dẫn viên vẫy chào và nói lời chào mừng (F3.4)
-      guide.greetLobby(museumData.museum.welcome);
-    });
+    // 14. Tạo màn hình mở đầu (Welcome & Lựa chọn hình thức tham quan F3.5)
+    const welcomeOverlay = new WelcomeOverlay(
+      museumData,
+      () => {
+        // Tham quan tự do
+        controller.setEnabled(true);
+        canvas.focus();
+        guide.greetLobby(museumData.museum.welcome);
+      },
+      () => {
+        // Đi theo tour có hướng dẫn
+        controller.setEnabled(true);
+        canvas.focus();
+        tourManager.startTour(0);
+      }
+    );
 
     // Hỗ trợ tham số URL thử nghiệm hoặc liên kết trực tiếp (?autostart=1&room=...)
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('autostart') === '1') {
       controller.setEnabled(true);
       welcomeOverlay.hide();
-      const targetRoom = urlParams.get('room');
-      if (targetRoom) {
-        await roomManager.navigateToRoom(targetRoom);
 
-        // Tham số vị trí tùy chọn (?pos=x,z)
-        const posParam = urlParams.get('pos');
-        if (posParam) {
-          const [px, pz] = posParam.split(',').map(Number);
-          if (!isNaN(px) && !isNaN(pz)) {
-            controller.setPosition(px, pz, Math.PI);
-          }
-        }
+      // Cài đặt giảm chuyển động nếu có
+      if (urlParams.get('reducedMotion') === '1') {
+        controller.setReducedMotion(true);
+      }
 
-        // Tham số mở ngay chi tiết hiện vật (?openExhibit=id)
-        const openExId = urlParams.get('openExhibit');
-        if (openExId) {
-          const roomData = museumData.rooms.find((r) => r.id === targetRoom);
-          const targetExData = roomData?.exhibits?.find((e) => e.id === openExId);
-          if (targetExData) {
-            setTimeout(() => {
-              exhibitManager.openDetailForExhibit(targetExData);
-            }, 600);
-          }
-        }
+      // Tham số tự động kích hoạt Tour Mode (?tour=1)
+      if (urlParams.get('tour') === '1') {
+        const startStop = parseInt(urlParams.get('stop') || '0', 10);
+        setTimeout(() => {
+          tourManager.startTour(startStop);
+        }, 500);
       } else {
-        // Tự động chào ở sảnh nếu không chỉ định phòng
-        guide.greetLobby(museumData.museum.welcome);
+        const targetRoom = urlParams.get('room');
+        if (targetRoom) {
+          await roomManager.navigateToRoom(targetRoom);
+
+          // Tham số vị trí tùy chọn (?pos=x,z)
+          const posParam = urlParams.get('pos');
+          if (posParam) {
+            const [px, pz] = posParam.split(',').map(Number);
+            if (!isNaN(px) && !isNaN(pz)) {
+              controller.setPosition(px, pz, Math.PI);
+            }
+          }
+
+          // Tham số mở ngay chi tiết hiện vật (?openExhibit=id)
+          const openExId = urlParams.get('openExhibit');
+          if (openExId) {
+            const roomData = museumData.rooms.find((r) => r.id === targetRoom);
+            const targetExData = roomData?.exhibits?.find((e) => e.id === openExId);
+            if (targetExData) {
+              setTimeout(() => {
+                exhibitManager.openDetailForExhibit(targetExData);
+              }, 600);
+            }
+          }
+
+          // Tham số nghe kể chuyện hiện vật cụ thể (?storyExhibit=id)
+          const storyExId = urlParams.get('storyExhibit');
+          if (storyExId) {
+            const roomData = museumData.rooms.find((r) => r.id === targetRoom);
+            const targetExData = roomData?.exhibits?.find((e) => e.id === storyExId);
+            if (targetExData) {
+              setTimeout(() => {
+                const pos = targetExData.position as any;
+                const exX = Array.isArray(pos) ? pos[0] || 0 : Number(pos?.x) || 0;
+                const exZ = Array.isArray(pos) ? pos[2] || 0 : Number(pos?.z) || 0;
+                guide.walkTo(exX + 1.5, exZ + 1.4, Math.PI + 0.4, () => {
+                  guide.tellStory(targetExData);
+                });
+              }, 800);
+            }
+          }
+        } else {
+          // Tự động chào ở sảnh nếu không chỉ định phòng
+          guide.greetLobby(museumData.museum.welcome);
+        }
       }
 
       // Tham số tự động mở khung chat (?openChat=1)

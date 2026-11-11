@@ -21,6 +21,7 @@ export class ExhibitManager {
 
   private closestExhibit: Exhibit | null = null;
   private readonly interactDistance = 3.2; // Phạm vi 3 mét theo yêu cầu F2.3
+  private onListenStoryListener: ((exhibit: ExhibitData) => void) | null = null;
 
   constructor(
     progressTracker: ProgressTracker,
@@ -37,10 +38,15 @@ export class ExhibitManager {
     });
 
     // Khởi tạo bảng chi tiết hiện vật
-    this.detailModal = new ExhibitDetailModal(() => {
-      // Khi đóng modal: cho phép người chơi di chuyển tiếp
-      this.controller.setEnabled(true);
-    });
+    this.detailModal = new ExhibitDetailModal(
+      () => {
+        // Khi đóng modal: cho phép người chơi di chuyển tiếp
+        this.controller.setEnabled(true);
+      },
+      (exhibit) => {
+        this.onListenStoryListener?.(exhibit);
+      }
+    );
 
     // Lắng nghe phím E để tương tác mở bảng chi tiết
     window.addEventListener('keydown', (e) => {
@@ -53,6 +59,10 @@ export class ExhibitManager {
     this.progressTracker.addListener(() => {
       this.updateProgressHUD();
     });
+  }
+
+  public setOnListenStory(listener: (exhibit: ExhibitData) => void): void {
+    this.onListenStoryListener = listener;
   }
 
   public setExhibits(exhibits: Exhibit[], dataList: ExhibitData[]): void {
@@ -88,8 +98,8 @@ export class ExhibitManager {
       }
     }
 
-    // Kiểm tra khoảng cách dưới 3m (F2.3)
-    if (nearest && minDistance <= this.interactDistance) {
+    // Kiểm tra khoảng cách dưới 3m (F2.3) - ẩn khi đang ở chế độ Tour (F3.5)
+    if (nearest && minDistance <= this.interactDistance && !this.controller.getIsTourMode()) {
       if (this.closestExhibit !== nearest) {
         this.closestExhibit = nearest;
         this.prompt.show(nearest.data);

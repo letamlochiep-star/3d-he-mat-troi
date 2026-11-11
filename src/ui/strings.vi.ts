@@ -87,6 +87,33 @@ export const STRINGS_VI = {
   chatErrorFallback: 'Hiện tại đường truyền đến trợ lý AI đang gián đoạn. Bạn có thể đọc bảng thuyết minh chi tiết hoặc hỏi lại sau ít phút.',
   chatMissingKeyNotice: 'Máy chủ chưa cấu hình GEMINI_API_KEY trong tệp .env.local. Trợ lý đang hoạt động ở chế độ giải đáp cơ bản.',
   chatThinking: 'Anh Minh đang suy nghĩ...',
+
+  // Chuỗi cho Lệnh 6: Kể chuyện & Tour có hướng dẫn (F3.5 & F3.6)
+  tourPromptTitle: 'Lựa chọn hình thức tham quan',
+  tourPromptDesc: 'Bạn muốn tự do khám phá các phòng hay đi theo tour có hướng dẫn viên đồng hành?',
+  btnStartGuidedTour: '🚩 Tham quan theo tour',
+  btnFreeExplore: '🚶 Tự do tham quan',
+  btnTourHUD: '🚩 Tour [P]',
+  tourBadge: 'ĐANG ĐI THEO TOUR',
+  tourPausedBadge: 'TOUR ĐÃ TẠM DỪNG',
+  tourProgressLabel: (current: number, total: number) => `Điểm ${current}/${total}`,
+  tourStopTitle: (name: string, roomName: string) => `${name} • ${roomName}`,
+  btnPauseTour: 'Tạm dừng [P]',
+  btnResumeTour: 'Tiếp tục [P]',
+  btnNextTour: 'Kế tiếp [N]',
+  btnPrevTour: 'Trước [B]',
+  btnExitTour: 'Thoát tour [Esc]',
+  btnReplayStory: 'Nghe lại [R]',
+  btnPauseStory: 'Tạm dừng',
+  btnResumeStory: 'Tiếp tục',
+  btnCloseStory: 'Đóng câu chuyện',
+  storyTitlePrefix: 'Câu chuyện hiện vật:',
+  tourMovingToNext: (name: string) => `Đang di chuyển tới: ${name}...`,
+  tourEnteringRoom: (roomName: string) => `Hướng dẫn viên đang dẫn sang: ${roomName}...`,
+  tourAutoPausedHint: 'Bạn vừa di chuyển tự do. Tour đã tạm dừng.',
+  tourCompletedTitle: '🎉 Chúc mừng bạn đã hoàn thành tour!',
+  tourCompletedDesc: 'Bạn đã cùng Hướng dẫn viên Anh Minh khám phá trọn vẹn 10 thiên thể kỳ thú của Hệ Mặt Trời.',
+  btnBackToLobby: 'Quay về Sảnh chính',
 };
 
 export const strings = STRINGS_VI;

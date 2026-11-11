@@ -3,9 +3,10 @@ import { ProceduralGuideModel, GuideAnimationState } from './ProceduralGuideMode
 import { SpeechService } from './SpeechService';
 import { SubtitleHUD } from '../ui/SubtitleHUD';
 import { CollisionSystem } from '../player/CollisionSystem';
+import { ExhibitData } from '../types';
 
 /**
- * Lớp điều khiển Hướng dẫn viên 3D (Anh Minh) theo chuẩn F3.1 đến F3.4
+ * Lớp điều khiển Hướng dẫn viên 3D (Anh Minh) theo chuẩn F3.1 đến F3.6
  */
 export class Guide {
   public readonly group: THREE.Group;
@@ -19,6 +20,13 @@ export class Guide {
   private currentYaw = Math.PI;
   private isSpeaking = false;
   private isGreeting = false;
+
+  // Trạng thái Tour có hướng dẫn & Kể chuyện (Lệnh 6: F3.5, F3.6)
+  private isTellingStory = false;
+  private isManualWalking = false;
+  private walkTargetPos = new THREE.Vector3();
+  private walkTargetYaw = Math.PI;
+  private onWalkArrival: (() => void) | null = null;
 
   // Cấu hình cự ly đi theo (2–3 mét theo yêu cầu F3.3)
   private readonly followMinDistance = 1.8;
@@ -145,9 +153,97 @@ export class Guide {
   }
 
   /**
+   * Hướng dẫn viên chủ động bước tới vị trí chỉ định trong Tour (F3.5)
+   */
+  public walkTo(x: number, z: number, targetYaw: number, onArrival?: () => void): void {
+    this.isManualWalking = true;
+    this.walkTargetPos.set(x, 0, z);
+    this.walkTargetYaw = targetYaw;
+    this.onWalkArrival = onArrival || null;
+    this.proceduralModel.setAnimation('walk');
+  }
+
+  /**
+   * Kể câu chuyện hiện vật theo từng câu văn (F3.6)
+   */
+  public tellStory(
+    exhibit: ExhibitData,
+    onSentence?: (index: number, text: string, total: number) => void,
+    onComplete?: () => void
+  ): void {
+    if (!exhibit.story) {
+      onComplete?.();
+      return;
+    }
+
+    this.isTellingStory = true;
+    this.proceduralModel.setAnimation('talk');
+
+    // Tách các câu văn bằng regex
+    const rawSentences = exhibit.story.match(/[^.!?]+[.!?]+/g) || [exhibit.story];
+    const sentences = rawSentences.map((s) => s.trim()).filter(Boolean);
+
+    this.speechService.speakSentences(
+      sentences,
+      (idx, sentence, total) => {
+        this.proceduralModel.setAnimation('talk');
+        this.subtitleHUD.showText(sentence, {
+          title: exhibit.title,
+          sentenceIndex: idx,
+          totalSentences: total,
+          onPauseToggle: () => {
+            if (this.speechService.isPaused()) {
+              this.proceduralModel.setAnimation('idle');
+            } else {
+              this.proceduralModel.setAnimation('talk');
+            }
+          },
+          onReplay: () => {
+            this.proceduralModel.setAnimation('talk');
+          },
+        });
+        onSentence?.(idx, sentence, total);
+      },
+      () => {
+        this.isTellingStory = false;
+        this.proceduralModel.setAnimation('idle');
+        this.subtitleHUD.hide();
+        onComplete?.();
+      }
+    );
+  }
+
+  public pauseStory(): void {
+    this.speechService.pause();
+    this.proceduralModel.setAnimation('idle');
+  }
+
+  public resumeStory(): void {
+    this.speechService.resume();
+    this.proceduralModel.setAnimation('talk');
+  }
+
+  public replayStory(): void {
+    this.speechService.replaySentences();
+    this.proceduralModel.setAnimation('talk');
+  }
+
+  public stopStory(): void {
+    this.isTellingStory = false;
+    this.isManualWalking = false;
+    this.stopSpeaking();
+  }
+
+  public isStoryActive(): boolean {
+    return this.isTellingStory;
+  }
+
+  /**
    * Ngắt lời và dừng hành động nói (khi chuyển phòng)
    */
   public stopSpeaking(): void {
+    this.isTellingStory = false;
+    this.isManualWalking = false;
     this.speechService.stop();
     this.subtitleHUD.hide();
     this.isSpeaking = false;
@@ -167,7 +263,46 @@ export class Guide {
     // 1. Cập nhật chuyển động hoạt hình
     this.proceduralModel.update(delta);
 
-    // 2. Tính vị trí mục tiêu lý tưởng (cách khách 2–3m)
+    // 2. Nếu đang tự bước đi tới vị trí chỉ định trong Tour (F3.5)
+    if (this.isManualWalking) {
+      const dx = this.walkTargetPos.x - this.currentPosition.x;
+      const dz = this.walkTargetPos.z - this.currentPosition.z;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+
+      if (dist > 0.08) {
+        this.proceduralModel.setAnimation('walk');
+        const moveDist = Math.min(this.walkSpeed * delta, dist);
+        const moveX = (dx / dist) * moveDist;
+        const moveZ = (dz / dist) * moveDist;
+
+        this.currentPosition.x += moveX;
+        this.currentPosition.z += moveZ;
+        this.group.position.x = this.currentPosition.x;
+        this.group.position.z = this.currentPosition.z;
+
+        // Xoay hướng mặt theo hướng bước đi
+        const targetYaw = Math.atan2(dx, dz);
+        this.currentYaw = this.lerpAngle(this.currentYaw, targetYaw, delta * 10.0);
+      } else {
+        // Đã đến đích
+        this.isManualWalking = false;
+        this.currentPosition.x = this.walkTargetPos.x;
+        this.currentPosition.z = this.walkTargetPos.z;
+        this.group.position.x = this.currentPosition.x;
+        this.group.position.z = this.currentPosition.z;
+        this.currentYaw = this.walkTargetYaw;
+        this.proceduralModel.setAnimation('idle');
+
+        const cb = this.onWalkArrival;
+        this.onWalkArrival = null;
+        cb?.();
+      }
+
+      this.group.rotation.y = this.currentYaw;
+      return;
+    }
+
+    // 3. Tính vị trí mục tiêu lý tưởng (cách khách 2–3m)
     // Để không chắn tầm nhìn hiện vật: đứng lệch một góc ~40 độ so với hướng nhìn của khách
     const followAngleOffset = closestExhibitPos ? 0.75 : 0.65; // ~40 độ
     const desiredAngle = playerYaw + followAngleOffset;

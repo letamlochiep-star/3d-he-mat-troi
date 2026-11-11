@@ -23,9 +23,11 @@ export class ExhibitDetailModal {
   private prevMousePos = { x: 0, y: 0 };
   private modelRotation = { x: 0, y: 0 };
   private cameraDistance = 4.2;
+  private readonly onListenStoryCallback?: (exhibit: ExhibitData) => void;
 
-  constructor(onClose: () => void) {
+  constructor(onClose: () => void, onListenStory?: (exhibit: ExhibitData) => void) {
     this.onCloseCallback = onClose;
+    this.onListenStoryCallback = onListenStory;
 
     this.container = document.createElement('div');
     this.container.id = 'exhibit-detail-modal';
@@ -280,7 +282,11 @@ export class ExhibitDetailModal {
     });
 
     this.container.querySelector('#btn-listen-story')?.addEventListener('click', () => {
-      alert(STRINGS_VI.btnStoryComingSoon);
+      const exhibit = this.currentExhibit;
+      this.close();
+      if (exhibit && this.onListenStoryCallback) {
+        this.onListenStoryCallback(exhibit);
+      }
     });
   }
 

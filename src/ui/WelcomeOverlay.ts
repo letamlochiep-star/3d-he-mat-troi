@@ -4,12 +4,14 @@ import { MuseumData } from '../types';
 export class WelcomeOverlay {
   private readonly container: HTMLElement;
   private readonly museumData: MuseumData;
-  private onStartCallback: () => void;
+  private onStartFreeCallback: () => void;
+  private onStartTourCallback?: () => void;
   private isVisible = true;
 
-  constructor(museumData: MuseumData, onStart: () => void) {
+  constructor(museumData: MuseumData, onStartFree: () => void, onStartTour?: () => void) {
     this.museumData = museumData;
-    this.onStartCallback = onStart;
+    this.onStartFreeCallback = onStartFree;
+    this.onStartTourCallback = onStartTour;
 
     this.container = document.createElement('div');
     this.container.id = 'welcome-overlay';
@@ -232,9 +234,20 @@ export class WelcomeOverlay {
         </section>
 
         <footer class="btn-start-container">
-          <button type="button" class="btn-start" id="btn-start-tour" autofocus>
-            ${STRINGS_VI.btnStartTour}
-          </button>
+          <div style="font-size: 15px; font-weight: 600; color: #d4a359; margin-bottom: 4px;">
+            ${STRINGS_VI.tourPromptTitle}:
+          </div>
+          <p style="font-size: 14px; color: #cbd5e1; margin-bottom: 12px; line-height: 1.4;">
+            ${STRINGS_VI.tourPromptDesc}
+          </p>
+          <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; width: 100%;">
+            <button type="button" class="btn-start" id="btn-start-tour" style="flex: 1; min-width: 220px;" autofocus>
+              ${STRINGS_VI.btnStartGuidedTour}
+            </button>
+            <button type="button" class="btn-start" id="btn-start-free" style="flex: 1; min-width: 220px; background: rgba(30, 41, 59, 0.85); border-color: rgba(255, 255, 255, 0.25); color: #f1f5f9;">
+              ${STRINGS_VI.btnFreeExplore}
+            </button>
+          </div>
           <div class="keyboard-hint">${STRINGS_VI.readyToStart}</div>
         </footer>
       </div>
@@ -242,11 +255,23 @@ export class WelcomeOverlay {
   }
 
   private attachEventListeners(): void {
-    const btn = this.container.querySelector('#btn-start-tour') as HTMLButtonElement | null;
-    if (btn) {
-      btn.addEventListener('click', () => {
+    const btnTour = this.container.querySelector('#btn-start-tour') as HTMLButtonElement | null;
+    if (btnTour) {
+      btnTour.addEventListener('click', () => {
         this.hide();
-        this.onStartCallback();
+        if (this.onStartTourCallback) {
+          this.onStartTourCallback();
+        } else {
+          this.onStartFreeCallback();
+        }
+      });
+    }
+
+    const btnFree = this.container.querySelector('#btn-start-free') as HTMLButtonElement | null;
+    if (btnFree) {
+      btnFree.addEventListener('click', () => {
+        this.hide();
+        this.onStartFreeCallback();
       });
     }
 
@@ -255,7 +280,7 @@ export class WelcomeOverlay {
       if (this.isVisible && (e.code === 'Enter' || e.code === 'Space')) {
         e.preventDefault();
         this.hide();
-        this.onStartCallback();
+        this.onStartFreeCallback();
       }
     });
   }
